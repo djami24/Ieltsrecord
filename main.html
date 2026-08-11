@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>IELTS Tracker</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#9B1C2E">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<script src="js/theme.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/styles.css"/>
+<link rel="stylesheet" href="css/theme-light.css"/>
+</head>
+<body>
+
+<!-- SARLAVHA -->
+<div class="header">
+  <div class="header-links">
+    <a class="header-link" href="settings.html">Sozlamalar</a>
+    <a class="header-link about-link" href="about.html">Dastur haqida</a>
+    <a class="header-link" href="admin.html" style="color:var(--gold);font-weight:600">Admin</a>
+  </div>
+  <div class="nylc-brand">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="16" cy="5" rx="3" ry="4.5" fill="var(--nylc-light)" opacity=".9"/>
+      <ellipse cx="16" cy="4.5" rx="1.5" ry="2.5" fill="#F5C842"/>
+      <rect x="14.5" y="8" width="3" height="7" rx="1" fill="white"/>
+      <polygon points="9,14 11,10 13,14" fill="white"/>
+      <polygon points="12,13 14,9 16,13" fill="white"/>
+      <polygon points="15,13 17,9 19,13" fill="white"/>
+      <polygon points="18,13 20,10 22,14" fill="white"/>
+      <ellipse cx="16" cy="15" rx="4" ry="3" fill="white"/>
+      <path d="M10 18 Q10 28 16 29 Q22 28 22 18 Q19 16 16 16 Q13 16 10 18Z" fill="white"/>
+      <rect x="11" y="20" width="5" height="3.5" rx="1" fill="var(--nylc)" opacity=".6"/>
+    </svg>
+    <div class="nylc-name">New York <span>O'quv Markazi</span></div>
+  </div>
+  <div class="badge"><span class="badge-dot"></span>IELTS Tracker</div>
+  <h1>O'z <em>natijalaringizni</em> kuzating.</h1>
+  <p>Ballaringizni kiriting, zaif tomonlaringizni aniqlang va o'sishingizni kuzating.</p>
+</div>
+
+<!-- TABLAR -->
+<div class="tabs">
+  <button class="tab active" type="button" role="tab" aria-selected="true" tabindex="0" onclick="switchTab('add')">Ball Qo'shish</button>
+  <button class="tab" type="button" role="tab" aria-selected="false" tabindex="-1" onclick="switchTab('history')">Tarix</button>
+  <button class="tab" type="button" role="tab" aria-selected="false" tabindex="-1" onclick="switchTab('charts')">Tahlil</button>
+</div>
+
+<!-- SAHIFA: BALL QO'SHISH -->
+<div class="page active" id="page-add">
+  <div class="card">
+    <div class="card-title-row">
+      <div class="card-title" id="entryFormTitle">Yangi Test Natijasi</div>
+      <button class="btn-inline" id="cancelEditBtn" type="button" onclick="cancelEdit()" style="display:none">Tahrirlashni bekor qilish</button>
+    </div>
+
+    <div class="date-row">
+      <div class="date-label">Sana</div>
+      <input type="date" id="entryDate"/>
+    </div>
+
+    <!-- Slayderlar -->
+    <div id="sliders"></div>
+
+    <!-- Umumiy ball tugmasi -->
+    <div class="toggle-row" onclick="toggleOverall()">
+      <div>
+        <div style="font-size:14px;font-weight:500;margin-bottom:2px">Umumiy ballim bor</div>
+        <div class="toggle-label">Qo'lda kiritish uchun yoqing, aks holda avtomatik hisoblanadi</div>
+      </div>
+      <div class="toggle-switch" id="overallToggle">
+        <div class="toggle-knob"></div>
+      </div>
+    </div>
+
+    <div id="overallSliderWrap" style="display:none;margin-bottom:20px"></div>
+
+    <!-- Izoh tugmasi -->
+    <div class="mood-toggle-row" onclick="toggleMood()" style="margin-bottom:20px">
+      <div>
+        <div style="font-size:14px;font-weight:500;margin-bottom:2px;color:var(--text)">Izoh qo'shish</div>
+        <div class="toggle-label">Qanday o'tdi? Ixtiyoriy sharh</div>
+      </div>
+      <div style="font-size:18px" id="moodArrow">💬</div>
+    </div>
+
+    <div class="mood-expand" id="moodExpand">
+      <div class="mood-inner">
+        <textarea id="moodNote" placeholder="mas. Gapirish bo'limida o'zimni ishonchli his qildim, lekin o'qishda vaqt yetmadi..."></textarea>
+      </div>
+    </div>
+
+    <button class="btn-add" id="saveEntryBtn" onclick="addEntry()">Natijani Saqlash</button>
+  </div>
+
+</div>
+
+<!-- SAHIFA: TARIX -->
+<div class="page" id="page-history">
+  <div class="history-toolbar">
+    <div class="history-filters">
+      <button class="history-filter active" type="button" onclick="setHistoryFilter('all', this)">Hammasi</button>
+      <button class="history-filter" type="button" onclick="setHistoryFilter('official', this)">Rasmiy</button>
+      <button class="history-filter" type="button" onclick="setHistoryFilter('notes', this)">Izohli</button>
+    </div>
+    <div class="history-actions">
+      <button class="btn-inline" type="button" onclick="exportEntries('json')">JSON yuklash</button>
+      <button class="btn-inline" type="button" onclick="exportEntries('csv')">CSV yuklash</button>
+      <button class="btn-inline" type="button" onclick="document.getElementById('importFile').click()">Import</button>
+      <input type="file" id="importFile" accept=".json,application/json" onchange="importEntries(event)" hidden />
+    </div>
+  </div>
+  <div id="historyList"></div>
+</div>
+
+<!-- GRAFIK MODAL -->
+<div class="chart-modal-overlay" id="chartModal">
+  <div class="chart-modal-header">
+    <div class="chart-modal-title">Vaqt O'tishi Bilan Rivojlanish</div>
+    <div class="chart-modal-close" onclick="closeChartModal()">&#x2715;</div>
+  </div>
+  <div class="chart-modal-period">
+    <button class="period-btn active" onclick="setModalPeriod('all',this)">Hammasi</button>
+    <button class="period-btn" onclick="setModalPeriod('month',this)">Oy</button>
+    <button class="period-btn" onclick="setModalPeriod('week',this)">Hafta</button>
+  </div>
+  <div class="chart-modal-body">
+    <canvas id="lineChartModal"></canvas>
+  </div>
+</div>
+
+<!-- SAHIFA: TAHLIL -->
+<div class="page" id="page-charts">
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <div class="chart-container" id="comparisonCard">
+    <div class="chart-label">So'nggi Taqqoslash</div>
+    <div id="comparisonSummary"></div>
+  </div>
+
+  <div class="chart-container" id="targetsCard">
+    <div class="card-title-row">
+      <div class="card-title">Maqsad Balllar</div>
+      <button class="btn-inline" type="button" onclick="resetTargets()">Qayta o'rnatish</button>
+    </div>
+    <div id="targets"></div>
+  </div>
+
+  <div class="chart-container" id="lineChartContainer">
+    <div class="chart-label">
+      <span>Vaqt O'tishi Bilan Rivojlanish</span>
+      <button class="btn-expand-chart" onclick="openChartModal()">&#x2922; Kattalashtirish</button>
+    </div>
+    <div class="chart-period" style="margin-bottom:16px">
+      <button class="period-btn active" onclick="setPeriod('all',this)">Hammasi</button>
+      <button class="period-btn" onclick="setPeriod('month',this)">Oy</button>
+      <button class="period-btn" onclick="setPeriod('week',this)">Hafta</button>
+    </div>
+    <canvas id="lineChart" height="180"></canvas>
+  </div>
+
+  <div class="chart-container" id="radarCard">
+    <div class="chart-label">Ko'nikmalar Radari</div>
+    <div class="radar-wrap">
+      <canvas id="radarChart"></canvas>
+    </div>
+  </div>
+
+  <div id="tipsSection"></div>
+
+  <!-- AI Maslahatlar -->
+  <div class="ai-tips-card" id="aiTipsCard" style="display:none">
+    <div class="ai-tips-header">
+      <div class="ai-tips-icon">&#x2726;</div>
+      <div>
+        <div class="ai-tips-title">AI Murabbiy</div>
+        <div class="ai-tips-sub">Shaxsiy tahlil</div>
+      </div>
+    </div>
+    <button class="btn-ai-tips" id="btnAiTips" onclick="fetchAiTips()">
+      <span>&#x2726;</span> Natijalarimni tahlil qilish
+    </button>
+    <div class="ai-tips-result" id="aiTipsResult" style="display:none"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="vendor/chart.umd.min.js"></script>
+<script src="js/scripts.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
+
+<script>
+// Talaba kuzatuvi - admin panel uchun
+(function() {
+  const VISITOR_LOG_KEY = 'nylc_visitor_log';
+  const VISITOR_ID_KEY = 'nylc_visitor_id';
+  const ENTRIES_KEY = 'nylc_ielts_entries';
+
+  function getOrCreateVisitorId() {
+    let id = localStorage.getItem(VISITOR_ID_KEY);
+    if (!id) {
+      id = 'v_' + Math.random().toString(36).slice(2,10) + '_' + Date.now().toString(36);
+      localStorage.setItem(VISITOR_ID_KEY, id);
+    }
+    return id;
+  }
+
+  function logVisit() {
+    const id = getOrCreateVisitorId();
+    const now = Date.now();
+    let log = [];
+    try { log = JSON.parse(localStorage.getItem(VISITOR_LOG_KEY) || '[]'); } catch {}
+
+    const ua = navigator.userAgent;
+    const device = /mobile/i.test(ua) ? 'Mobil' : /tablet/i.test(ua) ? 'Planshet' : 'Kompyuter';
+    
+    // Get entries
+    let entries = [];
+    try {
+      const raw = localStorage.getItem(ENTRIES_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        entries = Array.isArray(parsed) ? parsed : (parsed?.entries || []);
+      }
+    } catch {}
+
+    const existing = log.find(e => e.id === id);
+    if (existing) {
+      existing.lastSeen = now;
+      existing.visits = (existing.visits || 1) + 1;
+      existing.device = device;
+      existing.entries = entries;
+    } else {
+      log.push({ id, firstSeen: now, lastSeen: now, visits: 1, device, entries });
+    }
+    if (log.length > 200) log = log.slice(-200);
+    try { localStorage.setItem(VISITOR_LOG_KEY, JSON.stringify(log)); } catch {}
+  }
+
+  logVisit();
+  // Update log every 2 minutes while page is open
+  setInterval(logVisit, 120000);
+})();
+</script>
+
+</body>
+</html>
