@@ -47,11 +47,11 @@ const DEFAULT_SETTINGS = {
   theme: "system",
   insights: {
     showKpis: true,
-    showTaqqoslash: true,
-    showMaqsadlar: true,
-    showRivojlanish: true,
+    showComparison: true,
+    showTargets: true,
+    showProgress: true,
     showRadar: true,
-    showMaslahatlar: true,
+    showTips: true,
     showAiCoach: false,
   }
 };
@@ -154,7 +154,7 @@ function buildSliders() {
   const wrap = document.getElementById("sliders");
   wrap.innerHTML = SECTIONS.map(s => sliderHTML(s.key, s.label, s.icon, s.color, 6.0)).join("");
 
-  const owrap = document.getElementById("umumiySliderWrap");
+  const owrap = document.getElementById("overallSliderWrap");
   owrap.innerHTML = sliderHTML("umumiy", "Overall", "\u2605", "#F5C842", 6.0);
 
   document.querySelectorAll(".ielts-slider").forEach(el => {
@@ -428,7 +428,7 @@ function filteredEntries() {
 
 function renderCharts() {
   applyInsightsVisibility();
-  if (settings.insights.showRivojlanish) {
+  if (settings.insights.showProgress) {
     renderLineChart();
   } else if (lineChart) {
     lineChart.destroy();
@@ -718,7 +718,7 @@ function renderRadarChart() {
 
 // в”Ђв”Ђ TIPS в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function renderMaslahatlar() {
-  if (!settings.insights.showMaslahatlar) {
+  if (!settings.insights.showTips) {
     const tipsEl = document.getElementById("tipsSection");
     if (tipsEl) tipsEl.innerHTML = "";
     return;
@@ -750,7 +750,7 @@ function renderMaslahatlar() {
 
 // в”Ђв”Ђ AI TIPS в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function updateAiMaslahatlarVisibility() {
-  const card = document.getElementById("aiMaslahatlarCard");
+  const card = document.getElementById("aiTipsCard");
   if (!card) return;
   if (!settings.insights.showAiCoach) {
     card.style.display = "none";
@@ -776,8 +776,8 @@ function pickRepresentativeEntries() {
 }
 
 async function fetchAiMaslahatlar() {
-  const btn = document.getElementById("btnAiMaslahatlar");
-  const result = document.getElementById("aiMaslahatlarResult");
+  const btn = document.getElementById("btnAiTips");
+  const result = document.getElementById("aiTipsResult");
 
   btn.disabled = true;
   btn.innerHTML = '<span class="ai-typing"> Tahlil qilinmoqda</span>';
@@ -913,12 +913,12 @@ function loadSettings() {
 function applyInsightsVisibility() {
   const visibilityMap = [
     ["kpiGrid", settings.insights.showKpis],
-    ["comparisonCard", settings.insights.showTaqqoslash],
-    ["targetsCard", settings.insights.showMaqsadlar],
-    ["lineChartContainer", settings.insights.showRivojlanish],
+    ["comparisonCard", settings.insights.showComparison],
+    ["targetsCard", settings.insights.showTargets],
+    ["lineChartContainer", settings.insights.showProgress],
     ["radarCard", settings.insights.showRadar],
-    ["tipsSection", settings.insights.showMaslahatlar],
-    ["aiMaslahatlarCard", settings.insights.showAiCoach],
+    ["tipsSection", settings.insights.showTips],
+    ["aiTipsCard", settings.insights.showAiCoach],
   ];
 
   visibilityMap.forEach(([id, visible]) => {
@@ -1091,15 +1091,15 @@ function cancelTahrirlash() {
 
 function setOverallMode(enabled) {
   umumiyEnabled = !!enabled;
-  const tog = document.getElementById("umumiyToggle");
+  const tog = document.getElementById("overallToggle");
   if (tog) tog.classList.toggle("on", umumiyEnabled);
-  const wrap = document.getElementById("umumiySliderWrap");
+  const wrap = document.getElementById("overallSliderWrap");
   if (wrap) wrap.style.display = umumiyEnabled ? "block" : "none";
 }
 
 function setMoodOpen(open) {
   moodOpen = !!open;
-  const expand = document.getElementById("moodKattalashtirish");
+  const expand = document.getElementById("moodExpand");
   if (expand) expand.classList.toggle("open", moodOpen);
   const arrow = document.getElementById("moodArrow");
   if (arrow) arrow.textContent = moodOpen ? "\u2715" : "\u{1F4AC}";
@@ -1128,7 +1128,7 @@ function resetEntryForm() {
 
 function exitTahrirlashMode() {
   editingEntryDate = null;
-  const btn = document.getElementById("cancelTahrirlashBtn");
+  const btn = document.getElementById("cancelEditBtn");
   if (btn) btn.style.display = "none";
   const title = document.getElementById("entryFormTitle");
   if (title) title.textContent = "Yangi Test Natijasi";
@@ -1153,7 +1153,7 @@ function startTahrirlashEntry(date) {
   document.getElementById("moodNote").value = entry.mood || "";
   setMoodOpen(Boolean((entry.mood || "").trim()));
 
-  const btn = document.getElementById("cancelTahrirlashBtn");
+  const btn = document.getElementById("cancelEditBtn");
   if (btn) btn.style.display = "inline-flex";
   const title = document.getElementById("entryFormTitle");
   if (title) title.textContent = "Test Natijasini Tahrirlash";
