@@ -26,9 +26,15 @@
       style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Poppins',sans-serif;font-size:15px;outline:none;margin-bottom:10px"/>
     <input id="regLogin" type="text" placeholder="Login" autocomplete="username"
       style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Poppins',sans-serif;font-size:15px;outline:none;margin-bottom:10px"/>
-    <input id="regParol" type="password" placeholder="Parol" autocomplete="new-password"
-      style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Poppins',sans-serif;font-size:15px;outline:none;margin-bottom:8px"
-      onkeydown="if(event.key==='Enter')saveName()"/>
+    <div style="position:relative;margin-bottom:8px">
+      <input id="regParol" type="password" placeholder="Parol" autocomplete="new-password"
+        style="width:100%;box-sizing:border-box;padding:12px 44px 12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Poppins',sans-serif;font-size:15px;outline:none"
+        onkeydown="if(event.key==='Enter')saveName()"/>
+      <button type="button" onclick="toggleParolVisibility()" aria-label="Parolni ko'rsatish"
+        style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;padding:6px;line-height:1;color:var(--muted)">
+        <span id="regParolEye">👁</span>
+      </button>
+    </div>
     <div id="regError" style="display:none;font-size:12.5px;color:var(--rose);font-family:'Poppins',sans-serif;margin-bottom:8px"></div>
 
     <button onclick="saveName()" id="regSubmitBtn"
@@ -385,6 +391,15 @@ function showRegError(msg) {
   const err = document.getElementById('regError');
   if (err) { err.textContent = msg; err.style.display = 'block'; }
 }
+
+window.toggleParolVisibility = function() {
+  const inp = document.getElementById('regParol');
+  const eye = document.getElementById('regParolEye');
+  if (!inp) return;
+  const isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  if (eye) eye.textContent = isHidden ? '🙈' : '👁';
+};
 
 window.saveName = async function() {
   const ismInp = document.getElementById('regIsm');
