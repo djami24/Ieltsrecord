@@ -108,12 +108,6 @@
       <button class="history-filter" type="button" onclick="setHistoryFilter('official', this)">Rasmiy</button>
       <button class="history-filter" type="button" onclick="setHistoryFilter('notes', this)">Izohli</button>
     </div>
-    <div class="history-actions">
-      <button class="btn-inline" type="button" onclick="exportEntries('json')">JSON yuklash</button>
-      <button class="btn-inline" type="button" onclick="exportEntries('csv')">CSV yuklash</button>
-      <button class="btn-inline" type="button" onclick="document.getElementById('importFile').click()">Import</button>
-      <input type="file" id="importFile" accept=".json,application/json" onchange="importEntries(event)" hidden />
-    </div>
   </div>
   <div id="historyList"></div>
 </div>
