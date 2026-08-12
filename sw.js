@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ielts-tracker-v10';
+const CACHE_NAME = 'ielts-tracker-v11';
 const OFFLINE_URL = '/offline.html';
 const APP_SHELL = [
   '/',
