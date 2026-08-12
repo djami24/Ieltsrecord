@@ -48,6 +48,10 @@ function isValidDateString(value) {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+function genEntryId() {
+  return "e_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 9);
+}
+
 function clampBand(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return null;
@@ -58,6 +62,7 @@ function normalizeEntry(raw) {
   if (!raw || !isValidDateString(raw.date)) return null;
 
   const entry = {
+    id: (raw.id && typeof raw.id === "string") ? raw.id : genEntryId(),
     date: raw.date,
     manualOverall: !!raw.manualOverall,
     mood: String(raw.mood || "").trim(),
@@ -89,7 +94,7 @@ function loadEntries() {
     for (const item of list) {
       const normalized = normalizeEntry(item);
       if (!normalized) continue;
-      dedup.set(normalized.date, normalized);
+      dedup.set(normalized.id, normalized);
     }
 
     const result = Array.from(dedup.values()).sort((a, b) => a.date.localeCompare(b.date));
@@ -121,7 +126,7 @@ let historyFilter = "all";
 let lineChart = null;
 let radarChart = null;
 let targets = loadMaqsadlar();
-let editingEntryDate = null;
+let editingEntryId = null;
 
 // в”Ђв”Ђ INIT в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
@@ -271,35 +276,18 @@ function addEntry() {
     entry.umumiy = calculatedOverall;
   }
 
-  if (editingEntryDate) {
-    const sameDateOther = entries.findIndex(e => e.date === date && e.date !== editingEntryDate);
-    if (sameDateOther >= 0) {
-      const shouldReplace = window.confirm("Bu sanada boshqa yozuv mavjud. Uni almashtirmoqchi?");
-      if (!shouldReplace) {
-        showToast("Yangilash bekor qilindi");
-        return;
-      }
-      entries.splice(sameDateOther, 1);
-    }
-    entries = entries.filter(e => e.date !== editingEntryDate);
+  if (editingEntryId) {
+    entry.id = editingEntryId;
+    entries = entries.filter(e => e.id !== editingEntryId);
     entries.push(entry);
   } else {
-    const duplicateIndex = entries.findIndex(e => e.date === date);
-    if (duplicateIndex >= 0) {
-      const shouldReplace = window.confirm("Bu sanada yozuv allaqachon mavjud. Uni almashtirmoqchi?");
-      if (!shouldReplace) {
-        showToast("Saqlash bekor qilindi");
-        return;
-      }
-      entries[duplicateIndex] = entry;
-    } else {
-      entries.push(entry);
-    }
+    entry.id = genEntryId();
+    entries.push(entry);
   }
   entries.sort((a,b) => a.date.localeCompare(b.date));
   saveEntries();
 
-  const wasTahrirlashing = Boolean(editingEntryDate);
+  const wasTahrirlashing = Boolean(editingEntryId);
   resetEntryForm();
   exitTahrirlashMode();
 
@@ -339,7 +327,7 @@ function entryWrapHTML(e, i, total, prev) {
 
 function entryCardHTML(e, col, prev) {
   col = col || CARD_COLORS[0];
-  const isTahrirlashing = editingEntryDate === e.date;
+  const isTahrirlashing = editingEntryId === e.id;
   const d = new Date(e.date);
   const dateStr = d.toLocaleDateString("uz-UZ", { day:"numeric", month:"short", year:"numeric" });
   const bars = SECTIONS.map(s => `
@@ -363,17 +351,17 @@ function entryCardHTML(e, col, prev) {
   }
 
   return `
-  <div class="entry-card ${isTahrirlashing ? 'is-editing' : ''}" data-date="${e.date}"
+  <div class="entry-card ${isTahrirlashing ? 'is-editing' : ''}" data-id="${e.id}"
        style="background:${col.bg};border-color:${col.border}">
     <div class="entry-top">
       <div>
         <div class="entry-date">${dateStr}</div>
-        <button type="button" class="btn-entry-edit" onclick="startTahrirlashEntry('${e.date}')">Tahrirlash</button>
+        <button type="button" class="btn-entry-edit" onclick="startTahrirlashEntry('${e.id}')">Tahrirlash</button>
         ${e.manualOverall ? '<div style="font-size:10px;color:var(--muted2);margin-top:2px;font-family:Poppins,sans-serif">rasmiy</div>' : ''}
         ${deltaHTML}
       </div>
       <div class="entry-actions">
-        <button type="button" class="btn-entry-delete" onclick="deleteEntry('${e.date}')">O'chirish</button>
+        <button type="button" class="btn-entry-delete" onclick="deleteEntry('${e.id}')">O'chirish</button>
         <div class="entry-umumiy">${e.umumiy.toFixed(0)}<span>umumiy</span></div>
       </div>
     </div>
@@ -382,11 +370,11 @@ function entryCardHTML(e, col, prev) {
   </div>`;
 }
 
-function deleteEntry(date) {
-  const targetDate = String(date).trim();
+function deleteEntry(id) {
+  const targetId = String(id).trim();
   const removeAndRefresh = () => {
     const before = entries.length;
-    entries = entries.filter(e => String(e.date).trim() !== targetDate);
+    entries = entries.filter(e => String(e.id).trim() !== targetId);
     if (entries.length === before) {
       showToast("O\'chirish muvaffaqiyatsiz: yozuv topilmadi");
       return;
@@ -399,7 +387,7 @@ function deleteEntry(date) {
     showToast("Yozuv o\'chirildi");
   };
 
-  const card = document.querySelector(`.entry-card[data-date="${targetDate}"]`);
+  const card = document.querySelector(`.entry-card[data-id="${targetId}"]`);
   if (!card) {
     removeAndRefresh();
     return;
@@ -993,7 +981,7 @@ function setHistoryFilter(mode, btn) {
 
 
 function cancelTahrirlash() {
-  if (!editingEntryDate) return;
+  if (!editingEntryId) return;
   resetEntryForm();
   exitTahrirlashMode();
   renderHistory();
@@ -1038,7 +1026,7 @@ function resetEntryForm() {
 }
 
 function exitTahrirlashMode() {
-  editingEntryDate = null;
+  editingEntryId = null;
   const btn = document.getElementById("cancelEditBtn");
   if (btn) btn.style.display = "none";
   const title = document.getElementById("entryFormTitle");
@@ -1047,14 +1035,14 @@ function exitTahrirlashMode() {
   if (saveBtn) saveBtn.textContent = "Natijani Saqlash";
 }
 
-function startTahrirlashEntry(date) {
-  const entry = entries.find(e => e.date === date);
+function startTahrirlashEntry(id) {
+  const entry = entries.find(e => e.id === id);
   if (!entry) {
     showToast("Yozuv topilmadi");
     return;
   }
 
-  editingEntryDate = entry.date;
+  editingEntryId = entry.id;
   document.getElementById("entryDate").value = entry.date;
   SECTIONS.forEach(s => setSliderValue(s.key, entry[s.key]));
 
