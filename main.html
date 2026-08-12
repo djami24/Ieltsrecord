@@ -14,6 +14,21 @@
 </head>
 <body>
 
+<!-- ISM MODALI -->
+<div id="nameModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surface1);border:1px solid var(--border);border-radius:18px;padding:32px 28px;max-width:360px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+    <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin-bottom:6px">Xush kelibsiz! 👋</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:24px;font-family:'Poppins',sans-serif">Ismingizni kiriting — bu faqat bir marta so'raladi.</div>
+    <input id="nameInput" type="text" placeholder="Ism Familiya" autocomplete="name"
+      style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Poppins',sans-serif;font-size:15px;outline:none;margin-bottom:16px"
+      onkeydown="if(event.key==='Enter')saveName()"/>
+    <button onclick="saveName()"
+      style="width:100%;padding:13px;border-radius:10px;border:none;background:var(--gold);color:#1a1a1a;font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;cursor:pointer">
+      Davom etish →
+    </button>
+  </div>
+</div>
+
 <!-- SARLAVHA -->
 <div class="header">
   <div class="header-links">
@@ -225,6 +240,7 @@ window._fbSaveEntries = async function(entriesList) {
     await db.collection('visitors').doc(visitorId).set({
       id: visitorId,
       device,
+      name: window._studentName || localStorage.getItem('nylc_student_name') || '',
       lastSeen: Date.now(),
       entries: sorted,
       latestOverall: latest ? latest.umumiy : null,
@@ -257,6 +273,7 @@ async function logVisit() {
         lastSeen: now,
         visits: (snap.data().visits || 0) + 1,
         device,
+        name: window._studentName || localStorage.getItem('nylc_student_name') || '',
         entries: entriesList,
         latestOverall: latest ? latest.umumiy : null,
       }, { merge: true });
@@ -267,6 +284,7 @@ async function logVisit() {
         lastSeen: now,
         visits: 1,
         device,
+        name: window._studentName || localStorage.getItem('nylc_student_name') || '',
         entries: entriesList,
         latestOverall: latest ? latest.umumiy : null,
         createdAt: new Date().toISOString(),
@@ -275,8 +293,54 @@ async function logVisit() {
   } catch(e) { console.warn('Firebase visit log error:', e); }
 }
 
+// ── ISM MODALI ──────────────────────────────────────
+const NAME_KEY = 'nylc_student_name';
+
+function checkName() {
+  const saved = localStorage.getItem(NAME_KEY);
+  if (saved) {
+    applyName(saved);
+    return;
+  }
+  // Birinchi marta — modalni ko'rsat
+  const modal = document.getElementById('nameModal');
+  if (modal) modal.style.display = 'flex';
+  setTimeout(() => {
+    const inp = document.getElementById('nameInput');
+    if (inp) inp.focus();
+  }, 100);
+}
+
+window.saveName = function() {
+  const inp = document.getElementById('nameInput');
+  const name = inp ? inp.value.trim() : '';
+  if (!name) {
+    inp.style.borderColor = 'var(--rose)';
+    inp.placeholder = 'Ism kiriting...';
+    return;
+  }
+  localStorage.setItem(NAME_KEY, name);
+  const modal = document.getElementById('nameModal');
+  if (modal) modal.style.display = 'none';
+  applyName(name);
+  // Firebase ga ham saqlash
+  db.collection('visitors').doc(visitorId).set({ name }, { merge: true });
+};
+
+function applyName(name) {
+  // Header da nomni ko'rsat
+  const h1 = document.querySelector('.header h1');
+  if (h1) h1.innerHTML = h1.innerHTML.replace(
+    "O'z <em>natijalaringizni</em> kuzating.",
+    name + ", o'z <em>natijalaringizni</em> kuzating."
+  );
+  // logVisit ga ham nom qo'shish
+  window._studentName = name;
+}
+
 logVisit();
 setInterval(logVisit, 120000);
+checkName();
 </script>
 
 </body>
