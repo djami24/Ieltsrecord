@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --bg: #090d17;
     --surface: #10182b;
     --surface-2: #17233b;
@@ -277,4 +277,27 @@ body {
     .actions {
         flex-direction: column;
     }
+}
+
+.powered-by {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 22px 0 4px;
+    opacity: .5;
+}
+
+.powered-by span {
+    font-size: 11px;
+    font-style: italic;
+    color: var(--muted);
+}
+
+.powered-by img {
+    height: 14px;
+    width: auto;
+    display: block;
+    filter: brightness(0) invert(1);
+    opacity: .8;
 }
