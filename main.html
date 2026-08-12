@@ -31,7 +31,7 @@
       onkeydown="if(event.key==='Enter')saveName()"/>
     <div id="regError" style="display:none;font-size:12.5px;color:var(--rose);font-family:'Poppins',sans-serif;margin-bottom:8px"></div>
 
-    <button onclick="saveName()"
+    <button onclick="saveName()" id="regSubmitBtn"
       style="width:100%;padding:13px;border-radius:10px;border:none;background:var(--gold);color:#1a1a1a;font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px">
       Ro'yxatdan o'tish →
     </button>
@@ -234,14 +234,15 @@ try {
   console.warn('Firebase init error — offline/blocked, continuing without it:', e);
   // Xavfsiz "stub" — Firebase ishlamasa ham qolgan skript (ism modali va h.k.) davom etadi
   const chain = {
-    get: async () => ({ exists: () => false, data: () => ({}) }),
+    get: async () => ({ exists: false, data: () => ({}) }),
     set: async () => {},
   };
   db = { collection: () => ({ doc: () => chain }) };
 }
 
 const VISITOR_ID_KEY = 'nylc_visitor_id';
-const ENTRIES_KEY = 'nylc_ielts_entries';
+// ENTRIES_KEY scripts.js faylida allaqachon e'lon qilingan — bu yerda qayta e'lon qilinsa,
+// "Identifier already declared" xatosi tufayli BUTUN shu skript ishlamay qolar edi.
 
 function getOrCreateVisitorId() {
   let id = localStorage.getItem(VISITOR_ID_KEY);
@@ -256,22 +257,68 @@ const visitorId = getOrCreateVisitorId();
 const ua = navigator.userAgent;
 const device = /mobile/i.test(ua) ? 'Mobil' : /tablet/i.test(ua) ? 'Planshet' : 'Kompyuter';
 
+// ── AKKAUNT (login asosida Firebase'da doimiy saqlash) ──────
+const NAME_KEY = 'nylc_student_name';
+const LOGIN_KEY = 'nylc_student_login';
+const PASS_KEY = 'nylc_student_pass';
+
+function sanitizeLogin(login) {
+  return String(login || '').trim().toLowerCase().replace(/[^a-z0-9_.\-]/g, '');
+}
+function encodePass(parol) {
+  return btoa(unescape(encodeURIComponent(String(parol || ''))));
+}
+
+let accountId = null; // login asosidagi Firebase hujjat ID'si
+
 // Entries ni Firebase ga saqlash (scripts.js dan chaqiriladi)
 window._fbSaveEntries = async function(entriesList) {
   try {
     const sorted = [...entriesList].sort((a, b) => a.date.localeCompare(b.date));
     const latest = sorted[sorted.length - 1];
+    const name = window._studentName || localStorage.getItem(NAME_KEY) || '';
+
+    // Qurilma bo'yicha (analitika uchun, admin panelda)
     await db.collection('visitors').doc(visitorId).set({
       id: visitorId,
       device,
-      name: window._studentName || localStorage.getItem('nylc_student_name') || '',
+      name,
       lastSeen: Date.now(),
       entries: sorted,
       latestOverall: latest ? latest.umumiy : null,
       updatedAt: new Date().toISOString(),
     }, { merge: true });
+
+    // Talabaning login'i bo'yicha doimiy hisob (asosiy manba)
+    if (accountId) {
+      await db.collection('accounts').doc(accountId).set({
+        entries: sorted,
+        latestOverall: latest ? latest.umumiy : null,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+    }
   } catch(e) { console.warn('Firebase sync error:', e); }
 };
+
+// Firebase'dagi entries'ni sahifaga qayta yuklash (login qilinganda)
+function applyLoadedEntries(list) {
+  const normalized = Array.isArray(list)
+    ? list.map(e => (typeof normalizeEntry === 'function' ? normalizeEntry(e) : e)).filter(Boolean)
+    : [];
+  if (typeof entries !== 'undefined') {
+    entries.length = 0;
+    entries.push(...normalized);
+  }
+  try {
+    localStorage.setItem(ENTRIES_KEY, JSON.stringify({
+      version: 1, entries: normalized, updatedAt: new Date().toISOString(),
+    }));
+  } catch {}
+  if (typeof renderHistory === 'function') renderHistory();
+  if (typeof renderCharts === 'function') renderCharts();
+  if (typeof renderMaslahatlar === 'function') renderMaslahatlar();
+  if (typeof updateAiMaslahatlarVisibility === 'function') updateAiMaslahatlarVisibility();
+}
 
 // Visitor log (kirish vaqti, qurilma) ni qayd etish
 async function logVisit() {
@@ -292,12 +339,12 @@ async function logVisit() {
 
     const latest = entriesList.length ? entriesList[entriesList.length - 1] : null;
 
-    if (snap.exists()) {
+    if (snap.exists) {
       await visitorRef.set({
         lastSeen: now,
         visits: (snap.data().visits || 0) + 1,
         device,
-        name: window._studentName || localStorage.getItem('nylc_student_name') || '',
+        name: window._studentName || localStorage.getItem(NAME_KEY) || '',
         entries: entriesList,
         latestOverall: latest ? latest.umumiy : null,
       }, { merge: true });
@@ -308,7 +355,7 @@ async function logVisit() {
         lastSeen: now,
         visits: 1,
         device,
-        name: window._studentName || localStorage.getItem('nylc_student_name') || '',
+        name: window._studentName || localStorage.getItem(NAME_KEY) || '',
         entries: entriesList,
         latestOverall: latest ? latest.umumiy : null,
         createdAt: new Date().toISOString(),
@@ -317,14 +364,11 @@ async function logVisit() {
   } catch(e) { console.warn('Firebase visit log error:', e); }
 }
 
-// ── RO'YXATDAN O'TISH ──────────────────────────────────────
-const NAME_KEY = 'nylc_student_name';
-const LOGIN_KEY = 'nylc_student_login';
-const PASS_KEY = 'nylc_student_pass';
-
 function checkName() {
   const saved = localStorage.getItem(NAME_KEY);
+  const savedLogin = localStorage.getItem(LOGIN_KEY);
   if (saved) {
+    if (savedLogin) accountId = sanitizeLogin(savedLogin);
     applyName(saved);
     return;
   }
@@ -342,15 +386,16 @@ function showRegError(msg) {
   if (err) { err.textContent = msg; err.style.display = 'block'; }
 }
 
-window.saveName = function() {
+window.saveName = async function() {
   const ismInp = document.getElementById('regIsm');
   const familiyaInp = document.getElementById('regFamiliya');
   const loginInp = document.getElementById('regLogin');
   const parolInp = document.getElementById('regParol');
+  const btn = document.getElementById('regSubmitBtn');
 
   const ism = ismInp ? ismInp.value.trim() : '';
   const familiya = familiyaInp ? familiyaInp.value.trim() : '';
-  const login = loginInp ? loginInp.value.trim() : '';
+  const loginRaw = loginInp ? loginInp.value.trim() : '';
   const parol = parolInp ? parolInp.value : '';
 
   const err = document.getElementById('regError');
@@ -359,25 +404,64 @@ window.saveName = function() {
 
   if (!ism) { ismInp.style.borderColor = 'var(--rose)'; showRegError('Ismingizni kiriting.'); return; }
   if (!familiya) { familiyaInp.style.borderColor = 'var(--rose)'; showRegError('Familiyangizni kiriting.'); return; }
-  if (!login) { loginInp.style.borderColor = 'var(--rose)'; showRegError('Login kiriting.'); return; }
+  if (!loginRaw) { loginInp.style.borderColor = 'var(--rose)'; showRegError('Login kiriting.'); return; }
   if (!parol) { parolInp.style.borderColor = 'var(--rose)'; showRegError('Parol kiriting.'); return; }
   if (parol.length < 4) { parolInp.style.borderColor = 'var(--rose)'; showRegError('Parol kamida 4 belgidan iborat bo\'lsin.'); return; }
 
+  const loginId = sanitizeLogin(loginRaw);
+  if (!loginId) { loginInp.style.borderColor = 'var(--rose)'; showRegError('Login faqat harf/raqamlardan iborat bo\'lsin.'); return; }
+
   const name = ism + ' ' + familiya;
-  localStorage.setItem(NAME_KEY, name);
-  localStorage.setItem(LOGIN_KEY, login);
-  localStorage.setItem(PASS_KEY, btoa(unescape(encodeURIComponent(parol))));
+  const parolHash = encodePass(parol);
 
-  const modal = document.getElementById('nameModal');
-  if (modal) modal.style.display = 'none';
-  applyName(name);
-
-  // Firebase ga ham saqlash
+  if (btn) { btn.disabled = true; btn.textContent = 'Tekshirilmoqda...'; }
   try {
-    db.collection('visitors').doc(visitorId).set({
-      name, ism, familiya, login
-    }, { merge: true });
-  } catch(e) { console.warn('Firebase register error:', e); }
+    const ref = db.collection('accounts').doc(loginId);
+    const snap = await ref.get();
+
+    if (snap.exists) {
+      // Login band — parolni tekshiramiz (ilgari ro'yxatdan o'tgan talaba, boshqa qurilma/tozalangan brauzer)
+      const data = snap.data() || {};
+      if (data.parolHash !== parolHash) {
+        loginInp.style.borderColor = 'var(--rose)';
+        parolInp.style.borderColor = 'var(--rose)';
+        showRegError('Bu login band. Agar bu sizning hisobingiz bo\'lsa, to\'g\'ri parolni kiriting.');
+        if (btn) { btn.disabled = false; btn.textContent = "Ro'yxatdan o'tish →"; }
+        return;
+      }
+      // To'g'ri login+parol — avvalgi ma'lumotlarni tiklaymiz
+      accountId = loginId;
+      const restoredName = data.name || name;
+      localStorage.setItem(NAME_KEY, restoredName);
+      localStorage.setItem(LOGIN_KEY, loginId);
+      localStorage.setItem(PASS_KEY, parolHash);
+      applyLoadedEntries(data.entries || []);
+      applyName(restoredName);
+      await ref.set({ lastSeen: Date.now(), device }, { merge: true });
+    } else {
+      // Yangi hisob
+      accountId = loginId;
+      localStorage.setItem(NAME_KEY, name);
+      localStorage.setItem(LOGIN_KEY, loginId);
+      localStorage.setItem(PASS_KEY, parolHash);
+      await ref.set({
+        name, ism, familiya, login: loginId, parolHash,
+        entries: [],
+        device,
+        createdAt: new Date().toISOString(),
+        lastSeen: Date.now(),
+      });
+      applyName(name);
+    }
+
+    const modal = document.getElementById('nameModal');
+    if (modal) modal.style.display = 'none';
+  } catch(e) {
+    console.warn('Firebase register/login error:', e);
+    showRegError("Internetga ulanishda xatolik. Qayta urinib ko'ring.");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Ro'yxatdan o'tish →"; }
+  }
 };
 
 function applyName(name) {
