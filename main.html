@@ -185,11 +185,10 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<script type="module">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
 // ── FIREBASE INIT ──────────────────────────────────────────
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-
 const firebaseConfig = {
   apiKey: "AIzaSyB4X_pZPIqORmmXKhcW2f8lPOe2RIIH2bM",
   authDomain: "tracker-8ae79.firebaseapp.com",
@@ -199,8 +198,8 @@ const firebaseConfig = {
   appId: "1:256977321551:web:134cfae0f32bedb84ef43a"
 };
 
-const fbApp = initializeApp(firebaseConfig);
-const db = getFirestore(fbApp);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 const VISITOR_ID_KEY = 'nylc_visitor_id';
 const ENTRIES_KEY = 'nylc_ielts_entries';
@@ -223,7 +222,7 @@ window._fbSaveEntries = async function(entriesList) {
   try {
     const sorted = [...entriesList].sort((a, b) => a.date.localeCompare(b.date));
     const latest = sorted[sorted.length - 1];
-    await setDoc(doc(db, 'visitors', visitorId), {
+    await db.collection('visitors').doc(visitorId).set({
       id: visitorId,
       device,
       lastSeen: Date.now(),
@@ -237,8 +236,8 @@ window._fbSaveEntries = async function(entriesList) {
 // Visitor log (kirish vaqti, qurilma) ni qayd etish
 async function logVisit() {
   try {
-    const visitorRef = doc(db, 'visitors', visitorId);
-    const snap = await getDoc(visitorRef);
+    const visitorRef = db.collection('visitors').doc(visitorId);
+    const snap = await visitorRef.get();
     const now = Date.now();
 
     // Mavjud entries ni localStorage dan olish
@@ -254,7 +253,7 @@ async function logVisit() {
     const latest = entriesList.length ? entriesList[entriesList.length - 1] : null;
 
     if (snap.exists()) {
-      await setDoc(visitorRef, {
+      await visitorRef.set({
         lastSeen: now,
         visits: (snap.data().visits || 0) + 1,
         device,
@@ -262,7 +261,7 @@ async function logVisit() {
         latestOverall: latest ? latest.umumiy : null,
       }, { merge: true });
     } else {
-      await setDoc(visitorRef, {
+      await visitorRef.set({
         id: visitorId,
         firstSeen: now,
         lastSeen: now,
