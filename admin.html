@@ -703,8 +703,14 @@ const firebaseConfig = {
   appId: "1:256977321551:web:134cfae0f32bedb84ef43a"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+let db;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+} catch (e) {
+  console.warn('Firebase init error (admin):', e);
+  db = null;
+}
 
 // ── CONFIG ──────────────────────────────────────────
 const ADMIN_PASSWORD = 'record';
@@ -763,6 +769,11 @@ if (sessionStorage.getItem(ADMIN_SESSION_KEY) === '1') {
 
 // ── FIREBASE REAL-TIME LISTENER ─────────────────────
 function startFirebaseListener() {
+  if (!db) {
+    showToast("Firebase bilan aloqa yo'q — internetni tekshiring va sahifani yangilang.");
+    console.warn('startFirebaseListener: db mavjud emas.');
+    return;
+  }
   if (unsubscribe) unsubscribe();
   unsubscribe = db.collection('visitors').onSnapshot((snapshot) => {
     const now = Date.now();
