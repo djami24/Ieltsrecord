@@ -795,9 +795,12 @@ function buildSession(v, now) {
   else if (secAgo < 86400) status = 'today';
   else if (secAgo < 604800) status = 'week';
 
+  const rawName = (v.name || '').trim();
+  const shortId = (v.id || 'unknown').split('_')[1] || (v.id || 'unknown').slice(0, 8);
   return {
     id: v.id || v.visitorId || 'unknown',
-    shortId: (v.id || 'unknown').split('_')[1] || (v.id || 'unknown').slice(0, 8),
+    shortId,
+    name: rawName || shortId,
     firstSeen: v.firstSeen || v.lastSeen || now,
     lastSeen: v.lastSeen || now,
     visits: v.visits || 1,
@@ -861,7 +864,7 @@ function renderTable(sessions) {
   tbody.innerHTML = sessions.map(s => `
     <tr onclick="openDetail('${s.id}')" style="cursor:pointer">
       <td>
-        <div class="user-id">${s.shortId}</div>
+        <div class="user-id">${s.name}</div>
         <div style="font-size:10px;color:var(--muted2);margin-top:2px">${s.visits} ta tashrif</div>
       </td>
       <td style="font-size:12px">
@@ -910,13 +913,14 @@ window.openDetail = function(id) {
   const s = allSessions.find(x => x.id === id);
   if (!s) return;
   selectedSession = s;
-  document.getElementById('detailName').textContent = 'Talaba: ' + s.shortId;
+  document.getElementById('detailName').textContent = 'Talaba: ' + s.name;
 
   const secs = ["Tinglash", "O'qish", "Yozish", "Gapirish"];
   const keys = ['listening','reading','writing','speaking'];
   const latest = s.entries[s.entries.length - 1];
 
   document.getElementById('detailGrid').innerHTML = `
+    <div class="detail-item"><div class="d-label">Ism Familiya</div><div class="d-val" style="color:var(--gold)">${s.name}</div></div>
     <div class="detail-item"><div class="d-label">Qurilma</div><div class="d-val">${s.device}</div></div>
     <div class="detail-item"><div class="d-label">Jami Testlar</div><div class="d-val">${s.entries.length}</div></div>
     <div class="detail-item"><div class="d-label">Birinchi Tashrif</div><div class="d-val" style="font-size:13px">${formatDate(s.firstSeen)}</div></div>
@@ -954,9 +958,9 @@ window.closeDetailPanel = function() {
 
 // ── EXPORT ─────────────────────────────────────────
 window.exportSessions = function() {
-  const headers = ['ID','Qurilma','Birinchi_Tashrif','Oxirgi_Faollik','Tashriflar','Jami_Testlar','Songi_Ball','Tendensiya'];
+  const headers = ['Ism_Familiya','ID','Qurilma','Birinchi_Tashrif','Oxirgi_Faollik','Tashriflar','Jami_Testlar','Songi_Ball','Tendensiya'];
   const rows = allSessions.map(s => [
-    s.shortId, s.device,
+    s.name, s.shortId, s.device,
     new Date(s.firstSeen).toISOString(),
     new Date(s.lastSeen).toISOString(),
     s.visits, s.entries.length,
