@@ -1,8 +1,9 @@
-const CACHE_NAME = 'ielts-tracker-v8';
+const CACHE_NAME = 'ielts-tracker-v9';
 const OFFLINE_URL = '/offline.html';
 const APP_SHELL = [
   '/',
   '/main.html',
+  '/cefr.html',
   '/about.html',
   '/settings.html',
   '/theme-browser.html',
@@ -14,6 +15,7 @@ const APP_SHELL = [
   '/css/theme-light.css',
   '/css/theme-browser.css',
   '/js/scripts.js',
+  '/js/cefr-scripts.js',
   '/js/about.js',
   '/js/settings.js',
   '/js/theme.js',
