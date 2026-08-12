@@ -734,7 +734,7 @@ window.doLogin = function() {
     document.getElementById('adminUI').style.display = 'block';
     init();
   } else {
-    document.getElementById('loginError').textContent = 'Noto'g'ri parol. Qayta urinib ko'ring.';
+    document.getElementById('loginError').textContent = "Noto\'g\'ri parol. Qayta urinib ko\'ring.";
     document.getElementById('adminPass').value = '';
   }
 };
@@ -801,7 +801,7 @@ function buildSession(v, now) {
     firstSeen: v.firstSeen || v.lastSeen || now,
     lastSeen: v.lastSeen || now,
     visits: v.visits || 1,
-    device: v.device || 'Noma'lum',
+    device: v.device || "Noma'lum",
     entries: sortedEntries,
     latestOverall: latest?.umumiy ?? null,
     trend,
@@ -912,7 +912,7 @@ window.openDetail = function(id) {
   selectedSession = s;
   document.getElementById('detailName').textContent = 'Talaba: ' + s.shortId;
 
-  const secs = ['Tinglash', 'O'qish', 'Yozish', 'Gapirish'];
+  const secs = ["Tinglash", "O'qish", "Yozish", "Gapirish"];
   const keys = ['listening','reading','writing','speaking'];
   const latest = s.entries[s.entries.length - 1];
 
