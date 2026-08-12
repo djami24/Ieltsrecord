@@ -280,26 +280,24 @@ body {
 }
 
 .powered-by {
-    position: sticky;
-    bottom: 0;
+    position: fixed;
+    right: 18px;
+    bottom: 14px;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    padding: 10px 4px;
-    margin-top: 8px;
-    background: var(--bg);
     opacity: .4;
     z-index: 20;
+    pointer-events: none;
 }
 
 .powered-by span {
-    font-size: 10px;
+    font-size: 9px;
     font-style: italic;
     color: var(--muted);
 }
 
 .powered-by span b {
-    font-style: normal;
+    font-style: italic;
     font-weight: 600;
     font-family: 'DM Serif Display', serif;
     letter-spacing: .3px;
