@@ -1023,22 +1023,27 @@ canvas { display: block; }
 
 /* ── POWERED BY ── */
 .powered-by {
+  position: sticky;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 5px;
-  padding: 14px 24px 22px;
-  opacity: .45;
+  gap: 6px;
+  padding: 10px 24px;
+  margin-top: 8px;
+  background: var(--bg);
+  opacity: .55;
+  z-index: 20;
 }
 .powered-by span {
-  font-size: 10px;
+  font-size: 11px;
   font-style: italic;
   color: var(--muted);
 }
 .powered-by img {
-  height: 9px;
-  width: auto;
+  height: 13px !important;
+  width: auto !important;
   display: block;
   filter: brightness(0) invert(1);
-  opacity: .8;
+  opacity: .85;
 }
