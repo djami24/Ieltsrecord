@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --bg: #0A0E1A;
   --surface: #111827;
   --surface2: #1a2235;
@@ -91,6 +91,12 @@ body {
 }
 .about-link {
   text-decoration: none;
+}
+.theme-toggle-btn {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1;
+  padding: 6px 10px;
 }
 .header-link:hover {
   border-color: rgba(245,200,66,.5);
