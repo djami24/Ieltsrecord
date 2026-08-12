@@ -374,7 +374,7 @@ function entryCardHTML(e, col, prev) {
     const sign = diff > 0 ? "+" : "";
     const col2 = diff > 0 ? "var(--green)" : diff < 0 ? "var(--rose)" : "var(--muted2)";
     const arrow = diff > 0 ? "\u2191" : diff < 0 ? "\u2193" : "\u2192";
-    deltaHTML = `<div style="font-size:11px;font-family:'DM Mono',monospace;color:${col2};margin-top:2px">${arrow} ${sign}${diff.toFixed(1)} umumiy</div>`;
+    deltaHTML = `<div style="font-size:11px;font-family:'Poppins',sans-serif;color:${col2};margin-top:2px">${arrow} ${sign}${diff.toFixed(1)} umumiy</div>`;
   }
 
   return `
@@ -384,7 +384,7 @@ function entryCardHTML(e, col, prev) {
       <div>
         <div class="entry-date">${dateStr}</div>
         <button type="button" class="btn-entry-edit" onclick="startTahrirlashEntry('${e.date}')">Tahrirlash</button>
-        ${e.manualOverall ? '<div style="font-size:10px;color:var(--muted2);margin-top:2px;font-family:DM Mono,monospace">rasmiy</div>' : ''}
+        ${e.manualOverall ? '<div style="font-size:10px;color:var(--muted2);margin-top:2px;font-family:Poppins,sans-serif">rasmiy</div>' : ''}
         ${deltaHTML}
       </div>
       <div class="entry-actions">
@@ -526,7 +526,7 @@ function renderModalChart() {
         legend: {
           labels: {
             color: chartTheme.legend,
-            font: { family: "DM Mono", size: 11 },
+            font: { family: "Poppins", size: 11 },
             boxWidth: 14, padding: 16,
           }
         },
@@ -536,20 +536,20 @@ function renderModalChart() {
           borderWidth: 1,
           titleColor: chartTheme.tooltipTitle,
           bodyColor: chartTheme.tooltipBody,
-          titleFont: { family: "DM Mono", size: 12 },
-          bodyFont: { family: "DM Mono", size: 12 },
+          titleFont: { family: "Poppins", size: 12 },
+          bodyFont: { family: "Poppins", size: 12 },
           padding: 14,
         }
       },
       scales: {
         y: {
           min: 0, max: 9,
-          ticks: { stepSize: 1.5, color: chartTheme.tick, font: { family: "DM Mono", size: 11 } },
+          ticks: { stepSize: 1.5, color: chartTheme.tick, font: { family: "Poppins", size: 11 } },
           grid: { color: chartTheme.grid },
           border: { display: false },
         },
         x: {
-          ticks: { color: chartTheme.tick, font: { family: "DM Mono", size: 11 }, maxRotation: 0 },
+          ticks: { color: chartTheme.tick, font: { family: "Poppins", size: 11 }, maxRotation: 0 },
           grid: { display: false },
           border: { display: false },
         }
@@ -609,7 +609,7 @@ function renderLineChart() {
         legend: {
           labels: {
             color: chartTheme.legend,
-            font: { family: "DM Mono", size: 10 },
+            font: { family: "Poppins", size: 10 },
             boxWidth: 12,
             padding: 12,
           }
@@ -620,8 +620,8 @@ function renderLineChart() {
           borderWidth: 1,
           titleColor: chartTheme.tooltipTitle,
           bodyColor: chartTheme.tooltipBody,
-          titleFont: { family: "DM Mono", size: 11 },
-          bodyFont: { family: "DM Mono", size: 11 },
+          titleFont: { family: "Poppins", size: 11 },
+          bodyFont: { family: "Poppins", size: 11 },
           padding: 12,
         }
       },
@@ -631,7 +631,7 @@ function renderLineChart() {
           ticks: {
             stepSize: 1.5,
             color: chartTheme.tickSoft,
-            font: { family: "DM Mono", size: 10 },
+            font: { family: "Poppins", size: 10 },
           },
           grid: { color: chartTheme.grid },
           border: { display: false },
@@ -639,7 +639,7 @@ function renderLineChart() {
         x: {
           ticks: {
             color: chartTheme.tickSoft,
-            font: { family: "DM Mono", size: 10 },
+            font: { family: "Poppins", size: 10 },
             maxRotation: 0,
           },
           grid: { display: false },
@@ -690,8 +690,8 @@ function renderRadarChart() {
           backgroundColor: chartTheme.tooltipBg,
           titleColor: chartTheme.tooltipTitle,
           bodyColor: chartTheme.tooltipBody,
-          titleFont: { family: "DM Mono", size: 11 },
-          bodyFont: { family: "DM Mono", size: 12 },
+          titleFont: { family: "Poppins", size: 11 },
+          bodyFont: { family: "Poppins", size: 12 },
           padding: 12,
           borderColor: chartTheme.tooltipBorder,
           borderWidth: 1,
@@ -704,14 +704,14 @@ function renderRadarChart() {
           ticks: {
             stepSize: 3,
             color: chartTheme.tickSofter,
-            font: { family: "DM Mono", size: 9 },
+            font: { family: "Poppins", size: 9 },
             backdropColor: "transparent",
           },
           grid: { color: chartTheme.angle },
           angleLines: { color: chartTheme.angle },
           pointLabels: {
             color: colors,
-            font: { family: "Outfit", size: 12, weight: "500" },
+            font: { family: "Poppins", size: 12, weight: "500" },
           }
         }
       }
@@ -738,7 +738,7 @@ function renderMaslahatlar() {
     .slice(0, 2);
 
   const html = `
-    <div class="chart-label" style="margin-bottom:12px;font-size:11px;font-family:'DM Mono',monospace;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">Siz uchun maslahatlar</div>
+    <div class="chart-label" style="margin-bottom:12px;font-size:11px;font-family:'Poppins',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">Siz uchun maslahatlar</div>
     ${scored.map(s => {
       const tip = TIPS[s.key][Math.floor(Math.random() * TIPS[s.key].length)];
       return `
