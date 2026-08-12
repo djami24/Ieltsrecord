@@ -24,7 +24,7 @@
     <div class="badge" style="margin-bottom:0"><span class="badge-dot"></span>CEFR Tracker</div>
     <a class="badge" href="main.html" style="margin-bottom:0;text-decoration:none;cursor:pointer">IELTS Tracker</a>
   </div>
-  <h1>O'z <em>natijalaringizni</em> kuzating.</h1>
+  <h1 id="cefrHeading">O'z <em>natijalaringizni</em> kuzating.</h1>
   <p>Tinglash va O'qish ballaringizni kiriting (35 balldan), zaif tomonlaringizni aniqlang va o'sishingizni kuzating.</p>
 </div>
 
@@ -235,6 +235,23 @@ if ('serviceWorker' in navigator) {
   logVisit();
   // Update log every 2 minutes while page is open
   setInterval(logVisit, 120000);
+})();
+</script>
+
+<script>
+(function() {
+  // main.html'dagi ism bilan bir xil localStorage kaliti
+  const NAME_KEY = 'nylc_student_name';
+  const name = localStorage.getItem(NAME_KEY);
+  if (name) {
+    const h1 = document.getElementById('cefrHeading');
+    if (h1) {
+      h1.innerHTML = h1.innerHTML.replace(
+        "O'z <em>natijalaringizni</em> kuzating.",
+        name + ", o'z <em>natijalaringizni</em> kuzating."
+      );
+    }
+  }
 })();
 </script>
 
