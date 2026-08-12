@@ -37,16 +37,19 @@ self.addEventListener('activate', event => {
   })());
 });
 
-async function cacheFirst(request) {
+async function networkFirstAsset(request) {
   const cache = await caches.open(CACHE_NAME);
-  const cached = await cache.match(request, { ignoreSearch: true });
-  if (cached) return cached;
-
-  const response = await fetch(request);
-  if (request.url.startsWith(self.location.origin) && response && response.ok) {
-    cache.put(request, response.clone());
+  try {
+    const response = await fetch(request);
+    if (response && response.ok) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await cache.match(request, { ignoreSearch: true });
+    if (cached) return cached;
+    throw new Error('offline and not cached');
   }
-  return response;
 }
 
 async function networkFirstNavigation(request) {
@@ -80,7 +83,7 @@ self.addEventListener('fetch', event => {
   }
 
   if (isSameOrigin) {
-    event.respondWith(cacheFirst(request));
+    event.respondWith(networkFirstAsset(request));
     return;
   }
 
