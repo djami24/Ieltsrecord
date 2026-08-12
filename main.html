@@ -15,7 +15,7 @@
 <body>
 
 <!-- ISM MODALI -->
-<div id="nameModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px">
+<div id="nameModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--surface1);border:1px solid var(--border);border-radius:18px;padding:32px 28px;max-width:360px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.25)">
     <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin-bottom:6px">Xush kelibsiz! 👋</div>
     <div style="font-size:14px;color:var(--muted);margin-bottom:24px;font-family:'Poppins',sans-serif">Ismingizni kiriting — bu faqat bir marta so'raladi.</div>
@@ -213,8 +213,19 @@ const firebaseConfig = {
   appId: "1:256977321551:web:134cfae0f32bedb84ef43a"
 };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+let db;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+} catch (e) {
+  console.warn('Firebase init error — offline/blocked, continuing without it:', e);
+  // Xavfsiz "stub" — Firebase ishlamasa ham qolgan skript (ism modali va h.k.) davom etadi
+  const chain = {
+    get: async () => ({ exists: () => false, data: () => ({}) }),
+    set: async () => {},
+  };
+  db = { collection: () => ({ doc: () => chain }) };
+}
 
 const VISITOR_ID_KEY = 'nylc_visitor_id';
 const ENTRIES_KEY = 'nylc_ielts_entries';
