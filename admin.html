@@ -689,26 +689,10 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-// Bridge: onclick handlers call these; they forward to the module functions
-// which attach themselves to window after the module loads.
-function doLogin() { if(window.doLogin) window.doLogin(); }
-function doLogout() { if(window.doLogout) window.doLogout(); }
-function setFilter(f,btn) { if(window.setFilter) window.setFilter(f,btn); }
-function exportSessions() { if(window.exportSessions) window.exportSessions(); }
-function switchAdminTab(n,b) { if(window.switchAdminTab) window.switchAdminTab(n,b); }
-function openDetail(id) { if(window.openDetail) window.openDetail(id); }
-function closeDetail(e) { if(window.closeDetail) window.closeDetail(e); }
-function closeDetailPanel() { if(window.closeDetailPanel) window.closeDetailPanel(); }
-function saveAboutContent() { if(window.saveAboutContent) window.saveAboutContent(); }
-function resetAboutContent() { if(window.resetAboutContent) window.resetAboutContent(); }
-function showToast(m) { if(window.showToast) window.showToast(m); }
-</script>
-
-<script type="module">
 // ── FIREBASE ──────────────────────────────────────────────
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB4X_pZPIqORmmXKhcW2f8lPOe2RIIH2bM",
@@ -719,8 +703,8 @@ const firebaseConfig = {
   appId: "1:256977321551:web:134cfae0f32bedb84ef43a"
 };
 
-const fbApp = initializeApp(firebaseConfig);
-const db = getFirestore(fbApp);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 // ── CONFIG ──────────────────────────────────────────
 const ADMIN_PASSWORD = 'record';
@@ -780,8 +764,7 @@ if (sessionStorage.getItem(ADMIN_SESSION_KEY) === '1') {
 // ── FIREBASE REAL-TIME LISTENER ─────────────────────
 function startFirebaseListener() {
   if (unsubscribe) unsubscribe();
-  const visitorsRef = collection(db, 'visitors');
-  unsubscribe = onSnapshot(visitorsRef, (snapshot) => {
+  unsubscribe = db.collection('visitors').onSnapshot((snapshot) => {
     const now = Date.now();
     allSessions = snapshot.docs.map(d => buildSession(d.data(), now));
     allSessions.sort((a, b) => b.lastSeen - a.lastSeen);
