@@ -133,6 +133,7 @@
 
 <!-- SAHIFA: TAHLIL -->
 <div class="page" id="page-charts">
+  <div id="chartsStudentName" style="display:none;font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);margin-bottom:16px"></div>
   <div class="kpi-grid" id="kpiGrid"></div>
 
   <div class="chart-container" id="comparisonCard">
@@ -354,6 +355,12 @@ function applyName(name) {
   if (badge && badgeName) {
     badgeName.textContent = name;
     badge.style.display = 'inline-flex';
+  }
+  // "Tahlil" bo'limidagi ism-familiya
+  const chartsName = document.getElementById('chartsStudentName');
+  if (chartsName) {
+    chartsName.textContent = name;
+    chartsName.style.display = 'block';
   }
   // logVisit ga ham nom qo'shish
   window._studentName = name;
