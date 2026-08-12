@@ -143,10 +143,13 @@ renderHistory();
 renderCharts();
 renderMaslahatlar();
 updateAiMaslahatlarVisibility();
+applyInsightsVisibility();
+syncThemeToggleBtn();
 window.addEventListener("themechange", () => {
   renderCharts();
   renderMaslahatlar();
   updateAiMaslahatlarVisibility();
+  syncThemeToggleBtn();
 });
 
 // в”Ђв”Ђ SLIDERS в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
@@ -911,14 +914,16 @@ function loadSettings() {
 }
 
 function applyInsightsVisibility() {
+  // Sozlamalar bo'limi olib tashlandi - shuning uchun barcha tahlil
+  // kartochkalari doim yoniq (ko'rinadigan) holatda qoladi.
   const visibilityMap = [
-    ["kpiGrid", settings.insights.showKpis],
-    ["comparisonCard", settings.insights.showComparison],
-    ["targetsCard", settings.insights.showTargets],
-    ["lineChartContainer", settings.insights.showProgress],
-    ["radarCard", settings.insights.showRadar],
-    ["tipsSection", settings.insights.showTips],
-    ["aiTipsCard", settings.insights.showAiCoach],
+    ["kpiGrid", true],
+    ["comparisonCard", true],
+    ["targetsCard", true],
+    ["lineChartContainer", true],
+    ["radarCard", true],
+    ["tipsSection", true],
+    ["aiTipsCard", settings.insights.showAiCoach], // "Tez orada" - hali ishga tushmagan
   ];
 
   visibilityMap.forEach(([id, visible]) => {
@@ -1122,6 +1127,32 @@ function renderInsights() {
       Maqsadga farq: <strong>${weakest.gap.toFixed(1)}</strong>.
     </div>
   `;
+}
+
+// в”Ђв”Ђ TUNGI REJIM TUGMASI в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+function toggleNightMode() {
+  const current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  const next = current === "dark" ? "light" : "dark";
+  settings.theme = next;
+  saveSettings();
+  if (typeof window.__applyThemeFromSettings === "function") {
+    window.__applyThemeFromSettings();
+  }
+  syncThemeToggleBtn();
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {}
+}
+
+function syncThemeToggleBtn() {
+  const btn = document.getElementById("themeToggleBtn");
+  if (!btn) return;
+  const isLight = document.documentElement.getAttribute("data-theme") === "light";
+  btn.textContent = isLight ? "☀️" : "🌙";
+  btn.setAttribute("aria-label", isLight ? "Kunduzgi rejim yoqilgan - tungi rejimga o'tish" : "Tungi rejim yoqilgan - kunduzgi rejimga o'tish");
 }
 
 // в”Ђв”Ђ TOAST в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
