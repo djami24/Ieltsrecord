@@ -689,77 +689,44 @@
 
 <div class="toast" id="toast"></div>
 
-<script>
-// ── CONFIG ──────────────────────────────────────────
-// Admin parolini shu yerda o'zgartiring:
-const ADMIN_PASSWORD = 'record';
-const ENTRIES_KEY = 'nylc_ielts_entries';
-const ADMIN_SESSION_KEY = 'nylc_admin_session';
-const VISITOR_LOG_KEY = 'nylc_visitor_log';
-const VISITOR_ID_KEY = 'nylc_visitor_id';
+<script type="module">
+// ── FIREBASE ──────────────────────────────────────────────
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-// "Dastur haqida" sahifasi matnlari - about.html shu bilan bir xil
-// kalit (key) va standart qiymatlarni ishlatadi.
+const firebaseConfig = {
+  apiKey: "AIzaSyB4X_pZPIqORmmXKhcW2f8lPOe2RIIH2bM",
+  authDomain: "tracker-8ae79.firebaseapp.com",
+  projectId: "tracker-8ae79",
+  storageBucket: "tracker-8ae79.firebasestorage.app",
+  messagingSenderId: "256977321551",
+  appId: "1:256977321551:web:134cfae0f32bedb84ef43a"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
+// ── CONFIG ──────────────────────────────────────────
+const ADMIN_PASSWORD = 'record';
+const ADMIN_SESSION_KEY = 'nylc_admin_session';
 const ABOUT_CONTENT_KEY = 'nylc_about_content';
 const DEFAULT_ABOUT_CONTENT = {
   heroBadge: "Dastur haqida",
   heroTitle: "IELTS <em>natijalarini</em> kuzatish va tahlil qilish uchun yaratilgan.",
-  heroLead: "IELTS Tracker bu o‘quvchilarning mock test natijalarini saqlash, natijalarni kuzatish va vaqt davomida o‘zgarishlarni tahlil qilish uchun mo‘ljallangan platforma.",
+  heroLead: "IELTS Tracker bu o'quvchilarning mock test natijalarini saqlash, natijalarni kuzatish va vaqt davomida o'zgarishlarni tahlil qilish uchun mo'ljallangan platforma.",
   card1Kicker: "Maqsad",
   card1Title: "Natijalarni bir joyda saqlash va tahlil qilish",
-  card1Text: "Har bir mock test (IELTS, CEFR) natijasi tizimga kiritiladi. O‘quvchining Listening, Reading, Writing va Speaking natijalari saqlanib, umumiy natijalar bilan birgalikda ko‘rsatiladi.",
+  card1Text: "Har bir mock test (IELTS, CEFR) natijasi tizimga kiritiladi.",
   card2Kicker: "Qanday ishlaydi",
   card2Title: "Natija → Saqlash → Tahlil",
-  card2Text: "O‘quvchi har bir testdan so‘ng o‘z natijalarini kiritadi. Tizim natijalarni tarix bo‘yicha saqlaydi va grafiklar orqali natijalardagi o‘zgarishlarni ko‘rsatadi. Saytning asosiy vazifasi: o‘quvchi va o‘qituvchiga IELTS va CEFR tayyorgarligi davomida natijalarni muntazam kuzatish va qaysi yo‘nalishda o‘sish yoki pasayish borligini ko‘rish imkonini berish.",
-  stat1Value: "4",
-  stat1Label: "Asosiy ko'nikmalar kuzatiladi",
-  stat2Value: "1",
-  stat2Label: "Aniq rivojlanish jadvali",
-  stat3Value: "∞",
-  stat3Label: "Rivojlanish uchun imkoniyat",
+  card2Text: "O'quvchi har bir testdan so'ng o'z natijalarini kiritadi.",
+  stat1Value: "4", stat1Label: "Asosiy ko'nikmalar kuzatiladi",
+  stat2Value: "1", stat2Label: "Aniq rivojlanish jadvali",
+  stat3Value: "∞", stat3Label: "Rivojlanish uchun imkoniyat",
 };
 
-// ── VISITOR TRACKING ──────────────────────────────
-// Har bir talaba brauzerda o'ziga xos ID oladi va
-// admin panel uchun kuzatuv logi saqlanadi.
-function getOrCreateVisitorId() {
-  let id = localStorage.getItem(VISITOR_ID_KEY);
-  if (!id) {
-    id = 'v_' + Math.random().toString(36).slice(2,10) + '_' + Date.now().toString(36);
-    localStorage.setItem(VISITOR_ID_KEY, id);
-  }
-  return id;
-}
-
-function logVisit() {
-  const id = getOrCreateVisitorId();
-  const now = Date.now();
-  let log = [];
-  try { log = JSON.parse(localStorage.getItem(VISITOR_LOG_KEY) || '[]'); } catch {}
-
-  const existing = log.find(e => e.id === id);
-  const ua = navigator.userAgent;
-  const device = /mobile/i.test(ua) ? 'Mobil' : /tablet/i.test(ua) ? 'Planshet' : 'Kompyuter';
-
-  if (existing) {
-    existing.lastSeen = now;
-    existing.visits = (existing.visits || 1) + 1;
-    existing.device = device;
-  } else {
-    log.push({ id, firstSeen: now, lastSeen: now, visits: 1, device, page: location.pathname });
-  }
-
-  // Keep only last 200 visitors
-  if (log.length > 200) log = log.slice(-200);
-  try { localStorage.setItem(VISITOR_LOG_KEY, JSON.stringify(log)); } catch {}
-}
-
-// Log visit on load (for any page that includes this script)
-// This is called when a student opens the tracker
-logVisit();
-
 // ── LOGIN ──────────────────────────────────────────
-function doLogin() {
+window.doLogin = function() {
   const val = document.getElementById('adminPass').value;
   if (val === ADMIN_PASSWORD) {
     sessionStorage.setItem(ADMIN_SESSION_KEY, '1');
@@ -767,30 +734,25 @@ function doLogin() {
     document.getElementById('adminUI').style.display = 'block';
     init();
   } else {
-    document.getElementById('loginError').textContent = 'Noto\'g\'ri parol. Qayta urinib ko\'ring.';
+    document.getElementById('loginError').textContent = 'Noto'g'ri parol. Qayta urinib ko'ring.';
     document.getElementById('adminPass').value = '';
   }
-}
+};
 
-function doLogout() {
+window.doLogout = function() {
   sessionStorage.removeItem(ADMIN_SESSION_KEY);
   location.reload();
-}
+};
 
 // ── STATE ──────────────────────────────────────────
 let allSessions = [];
 let currentFilter = 'all';
 let selectedSession = null;
+let unsubscribe = null;
 
 // ── INIT ───────────────────────────────────────────
 function init() {
-  // Check if already logged in this session
-  if (sessionStorage.getItem(ADMIN_SESSION_KEY) === '1') {
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('adminUI').style.display = 'block';
-  }
-  loadData();
-  setInterval(loadData, 30000); // Auto-refresh every 30s
+  startFirebaseListener();
 }
 
 if (sessionStorage.getItem(ADMIN_SESSION_KEY) === '1') {
@@ -799,73 +761,50 @@ if (sessionStorage.getItem(ADMIN_SESSION_KEY) === '1') {
   init();
 }
 
-// ── DATA LOADING ───────────────────────────────────
-function loadData() {
-  // Load visitor log
-  let visitorLog = [];
-  try { visitorLog = JSON.parse(localStorage.getItem(VISITOR_LOG_KEY) || '[]'); } catch {}
-
-  // Load current user's entries (for demo/testing purposes)
-  let myEntries = [];
-  try {
-    const raw = localStorage.getItem(ENTRIES_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      myEntries = Array.isArray(parsed) ? parsed : (parsed?.entries || []);
-    }
-  } catch {}
-
-  // Build session data
-  const now = Date.now();
-  const myId = getOrCreateVisitorId();
-
-  // Ensure current visitor is in log with entries
-  let sessions = visitorLog.map(v => {
-    const entries = v.id === myId ? myEntries : (v.entries || []);
-    return buildSession(v, entries, now);
+// ── FIREBASE REAL-TIME LISTENER ─────────────────────
+function startFirebaseListener() {
+  if (unsubscribe) unsubscribe();
+  const visitorsRef = collection(db, 'visitors');
+  unsubscribe = onSnapshot(visitorsRef, (snapshot) => {
+    const now = Date.now();
+    allSessions = snapshot.docs.map(d => buildSession(d.data(), now));
+    allSessions.sort((a, b) => b.lastSeen - a.lastSeen);
+    updateStats();
+    applyFilter();
+    document.getElementById('lastRefresh').textContent =
+      'Yangilandi: ' + new Date().toLocaleTimeString('uz-UZ');
+  }, (err) => {
+    console.warn('Firebase listener error:', err);
+    showToast('Firebase ulanishida xatolik');
   });
-
-  // If no visitors in log yet (fresh install), show at least current user
-  if (!sessions.length && myEntries.length > 0) {
-    const myVisitor = {
-      id: myId,
-      firstSeen: now - 60000,
-      lastSeen: now,
-      visits: 1,
-      device: /mobile/i.test(navigator.userAgent) ? 'Mobil' : 'Kompyuter'
-    };
-    sessions = [buildSession(myVisitor, myEntries, now)];
-  }
-
-  allSessions = sessions.sort((a, b) => b.lastSeen - a.lastSeen);
-  updateStats();
-  applyFilter();
-  document.getElementById('lastRefresh').textContent = 'Yangilandi: ' + new Date().toLocaleTimeString('uz-UZ');
 }
 
-function buildSession(v, entries, now) {
-  const sortedEntries = [...entries].sort((a, b) => a.date?.localeCompare(b.date));
+// ── SESSION BUILDER ─────────────────────────────────
+function buildSession(v, now) {
+  const rawEntries = v.entries || [];
+  const sortedEntries = [...rawEntries].sort((a, b) =>
+    (a.date || '').localeCompare(b.date || ''));
   const latest = sortedEntries[sortedEntries.length - 1];
   const first = sortedEntries[0];
   const trend = sortedEntries.length >= 2
-    ? (latest?.overall || 0) - (first?.overall || 0)
+    ? (latest?.umumiy ?? 0) - (first?.umumiy ?? 0)
     : 0;
 
-  const secAgo = (now - v.lastSeen) / 1000;
+  const secAgo = (now - (v.lastSeen || 0)) / 1000;
   let status = 'old';
-  if (secAgo < 300) status = 'active';       // < 5 min = active
-  else if (secAgo < 86400) status = 'today'; // < 24h
-  else if (secAgo < 604800) status = 'week'; // < 7d
+  if (secAgo < 300) status = 'active';
+  else if (secAgo < 86400) status = 'today';
+  else if (secAgo < 604800) status = 'week';
 
   return {
-    id: v.id,
-    shortId: v.id.split('_')[1] || v.id.slice(0, 8),
-    firstSeen: v.firstSeen,
-    lastSeen: v.lastSeen,
+    id: v.id || v.visitorId || 'unknown',
+    shortId: (v.id || 'unknown').split('_')[1] || (v.id || 'unknown').slice(0, 8),
+    firstSeen: v.firstSeen || v.lastSeen || now,
+    lastSeen: v.lastSeen || now,
     visits: v.visits || 1,
-    device: v.device || 'Noma\'lum',
+    device: v.device || 'Noma'lum',
     entries: sortedEntries,
-    latestOverall: latest?.overall ?? null,
+    latestOverall: latest?.umumiy ?? null,
     trend,
     status,
     secAgo,
@@ -877,7 +816,7 @@ function updateStats() {
   const now = Date.now();
   const total = allSessions.length;
   const today = allSessions.filter(s => (now - s.lastSeen) < 86400000).length;
-  const week = allSessions.filter(s => (now - s.lastSeen) < 604800000).length;
+  const week  = allSessions.filter(s => (now - s.lastSeen) < 604800000).length;
   const withScores = allSessions.filter(s => s.latestOverall !== null);
   const avg = withScores.length
     ? (withScores.reduce((a, s) => a + s.latestOverall, 0) / withScores.length).toFixed(1)
@@ -885,36 +824,33 @@ function updateStats() {
 
   document.getElementById('statTotal').textContent = total;
   document.getElementById('statToday').textContent = today;
-  document.getElementById('statWeek').textContent = week;
-  document.getElementById('statAvg').textContent = avg;
+  document.getElementById('statWeek').textContent  = week;
+  document.getElementById('statAvg').textContent   = avg;
 }
 
 // ── FILTER ─────────────────────────────────────────
-function setFilter(f, btn) {
+window.setFilter = function(f, btn) {
   currentFilter = f;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   applyFilter();
-}
+};
 
 function applyFilter() {
   const now = Date.now();
   const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
-
   let filtered = allSessions;
-
   if (currentFilter === 'active') filtered = filtered.filter(s => (now - s.lastSeen) < 300000);
   else if (currentFilter === 'week') filtered = filtered.filter(s => (now - s.lastSeen) < 604800000);
   else if (currentFilter === 'new') filtered = filtered.filter(s => s.entries.length === 0);
-
   if (search) {
     filtered = filtered.filter(s =>
-      s.shortId.includes(search) || s.device.toLowerCase().includes(search)
-    );
+      s.shortId.includes(search) || s.device.toLowerCase().includes(search));
   }
-
   renderTable(filtered);
 }
+
+window.applyFilter = applyFilter;
 
 // ── TABLE ──────────────────────────────────────────
 function renderTable(sessions) {
@@ -923,7 +859,6 @@ function renderTable(sessions) {
     tbody.innerHTML = `<tr><td colspan="7" class="empty-table">📋 Hech qanday sessiya topilmadi</td></tr>`;
     return;
   }
-
   tbody.innerHTML = sessions.map(s => `
     <tr onclick="openDetail('${s.id}')" style="cursor:pointer">
       <td>
@@ -936,7 +871,9 @@ function renderTable(sessions) {
       </td>
       <td><span class="device-tag">${s.device}</span></td>
       <td style="font-family:'Poppins',sans-serif;font-size:13px">${s.entries.length}</td>
-      <td>${s.latestOverall !== null ? `<span class="score-pill ${scoreClass(s.latestOverall)}">${s.latestOverall.toFixed(1)}</span>` : '<span style="color:var(--muted2);font-size:12px">—</span>'}</td>
+      <td>${s.latestOverall !== null
+        ? `<span class="score-pill ${scoreClass(s.latestOverall)}">${s.latestOverall.toFixed(1)}</span>`
+        : '<span style="color:var(--muted2);font-size:12px">—</span>'}</td>
       <td><span class="trend ${trendClass(s.trend)}">${trendText(s.trend)}</span></td>
       <td>${statusBadge(s.status)}</td>
     </tr>
@@ -944,51 +881,39 @@ function renderTable(sessions) {
 }
 
 function scoreClass(v) {
-  if (v >= 7.5) return 'high';
-  if (v >= 6.5) return 'mid';
-  if (v >= 5.5) return 'low';
-  return 'vlow';
+  if (v >= 7.5) return 'high'; if (v >= 6.5) return 'mid';
+  if (v >= 5.5) return 'low'; return 'vlow';
 }
-
-function trendClass(t) {
-  if (t > 0) return 'up';
-  if (t < 0) return 'down';
-  return 'flat';
-}
-
+function trendClass(t) { return t > 0 ? 'up' : t < 0 ? 'down' : 'flat'; }
 function trendText(t) {
   if (t > 0) return `↑ +${t.toFixed(1)}`;
   if (t < 0) return `↓ ${t.toFixed(1)}`;
   return '→ 0.0';
 }
-
 function statusBadge(s) {
-  const labels = { active: 'Faol', today: 'Bugun', week: 'Hafta', old: 'Eski' };
-  return `<span class="status-dot"><span class="dot ${s === 'active' ? 'active' : s === 'today' || s === 'week' ? 'recent' : 'old'}"></span>${labels[s] || s}</span>`;
+  const labels = { active:'Faol', today:'Bugun', week:'Hafta', old:'Eski' };
+  const dot = s === 'active' ? 'active' : (s === 'today' || s === 'week') ? 'recent' : 'old';
+  return `<span class="status-dot"><span class="dot ${dot}"></span>${labels[s]||s}</span>`;
 }
-
 function formatTime(ts) {
-  const now = Date.now();
-  const diff = (now - ts) / 1000;
+  const diff = (Date.now() - ts) / 1000;
   if (diff < 60) return 'Hozirgina';
   if (diff < 3600) return Math.floor(diff/60) + ' daqiqa oldin';
   if (diff < 86400) return Math.floor(diff/3600) + ' soat oldin';
   return formatDate(ts);
 }
-
 function formatDate(ts) {
   return new Date(ts).toLocaleDateString('uz-UZ', { day:'numeric', month:'short', year:'numeric' });
 }
 
 // ── DETAIL PANEL ───────────────────────────────────
-function openDetail(id) {
+window.openDetail = function(id) {
   const s = allSessions.find(x => x.id === id);
   if (!s) return;
   selectedSession = s;
-
   document.getElementById('detailName').textContent = 'Talaba: ' + s.shortId;
 
-  const secs = ['Tinglash','O\'qish','Yozish','Gapirish'];
+  const secs = ['Tinglash', 'O'qish', 'Yozish', 'Gapirish'];
   const keys = ['listening','reading','writing','speaking'];
   const latest = s.entries[s.entries.length - 1];
 
@@ -998,7 +923,7 @@ function openDetail(id) {
     <div class="detail-item"><div class="d-label">Birinchi Tashrif</div><div class="d-val" style="font-size:13px">${formatDate(s.firstSeen)}</div></div>
     <div class="detail-item"><div class="d-label">Oxirgi Faollik</div><div class="d-val" style="font-size:13px">${formatTime(s.lastSeen)}</div></div>
     ${latest ? `
-    <div class="detail-item"><div class="d-label">So'nggi Umumiy</div><div class="d-val" style="color:var(--gold)">${latest.overall?.toFixed(1) ?? '—'}</div></div>
+    <div class="detail-item"><div class="d-label">So'nggi Umumiy</div><div class="d-val" style="color:var(--gold)">${(latest.umumiy ?? 0).toFixed(1)}</div></div>
     <div class="detail-item"><div class="d-label">Tendensiya</div><div class="d-val"><span class="trend ${trendClass(s.trend)}">${trendText(s.trend)}</span></div></div>
     ${keys.map((k,i) => `<div class="detail-item"><div class="d-label">${secs[i]}</div><div class="d-val"><span class="score-pill ${scoreClass(latest[k] ?? 0)}">${(latest[k] ?? 0).toFixed(1)}</span></div></div>`).join('')}
     ` : '<div class="detail-item" style="grid-column:1/-1"><div class="d-label">Natija</div><div class="d-val" style="color:var(--muted)">Hali test kiritmagan</div></div>'}
@@ -1010,7 +935,7 @@ function openDetail(id) {
     ${hist.map(e => `
       <div class="history-mini-row">
         <div class="history-mini-date">${e.date}</div>
-        <span class="score-pill ${scoreClass(e.overall ?? 0)}">${(e.overall ?? 0).toFixed(1)}</span>
+        <span class="score-pill ${scoreClass(e.umumiy ?? 0)}">${(e.umumiy ?? 0).toFixed(1)}</span>
         <span style="font-size:11px;color:var(--muted)">
           T:${(e.listening??0).toFixed(1)} O:${(e.reading??0).toFixed(1)} Y:${(e.writing??0).toFixed(1)} G:${(e.speaking??0).toFixed(1)}
         </span>
@@ -1019,26 +944,23 @@ function openDetail(id) {
   ` : '';
 
   document.getElementById('detailOverlay').classList.add('open');
-}
+};
 
-function closeDetail(e) {
-  if (e.target === document.getElementById('detailOverlay')) closeDetailPanel();
-}
-
-function closeDetailPanel() {
+window.closeDetail = function(e) {
+  if (e.target === document.getElementById('detailOverlay')) window.closeDetailPanel();
+};
+window.closeDetailPanel = function() {
   document.getElementById('detailOverlay').classList.remove('open');
-}
+};
 
 // ── EXPORT ─────────────────────────────────────────
-function exportSessions() {
-  const headers = ['ID', 'Qurilma', 'Birinchi_Tashrif', 'Oxirgi_Faollik', 'Tashriflar', 'Jami_Testlar', 'Songi_Ball', 'Tendensiya'];
+window.exportSessions = function() {
+  const headers = ['ID','Qurilma','Birinchi_Tashrif','Oxirgi_Faollik','Tashriflar','Jami_Testlar','Songi_Ball','Tendensiya'];
   const rows = allSessions.map(s => [
-    s.shortId,
-    s.device,
+    s.shortId, s.device,
     new Date(s.firstSeen).toISOString(),
     new Date(s.lastSeen).toISOString(),
-    s.visits,
-    s.entries.length,
+    s.visits, s.entries.length,
     s.latestOverall?.toFixed(1) ?? '',
     s.trend.toFixed(1),
   ]);
@@ -1050,24 +972,23 @@ function exportSessions() {
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
   showToast('CSV yuklandi ✓');
-}
+};
 
 // ── ADMIN TABS ─────────────────────────────────────
-function switchAdminTab(name, btn) {
+window.switchAdminTab = function(name, btn) {
   document.querySelectorAll('.admin-nav .tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('studentsSection').style.display = name === 'students' ? '' : 'none';
   document.getElementById('aboutSection').style.display = name === 'about' ? '' : 'none';
   if (name === 'about') loadAboutEditor();
-}
+};
 
-// ── "DASTUR HAQIDA" TAHRIRLASH ─────────────────────
+// ── ABOUT EDITOR ───────────────────────────────────
 function getAboutContent() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(ABOUT_CONTENT_KEY) || '{}') || {}; } catch {}
   return Object.assign({}, DEFAULT_ABOUT_CONTENT, saved);
 }
-
 function loadAboutEditor() {
   const c = getAboutContent();
   Object.keys(DEFAULT_ABOUT_CONTENT).forEach(key => {
@@ -1075,8 +996,7 @@ function loadAboutEditor() {
     if (el) el.value = c[key];
   });
 }
-
-function saveAboutContent() {
+window.saveAboutContent = function() {
   const c = {};
   Object.keys(DEFAULT_ABOUT_CONTENT).forEach(key => {
     const el = document.getElementById('edit_' + key);
@@ -1085,17 +1005,14 @@ function saveAboutContent() {
   try {
     localStorage.setItem(ABOUT_CONTENT_KEY, JSON.stringify(c));
     showToast("Dastur haqida sahifasi yangilandi ✓");
-  } catch {
-    showToast("Saqlashda xatolik yuz berdi");
-  }
-}
-
-function resetAboutContent() {
+  } catch { showToast("Saqlashda xatolik yuz berdi"); }
+};
+window.resetAboutContent = function() {
   if (!confirm("Barcha matnlarni standart holatga qaytarishni xohlaysizmi?")) return;
   try { localStorage.removeItem(ABOUT_CONTENT_KEY); } catch {}
   loadAboutEditor();
   showToast("Standart holatga qaytarildi ✓");
-}
+};
 
 // ── TOAST ──────────────────────────────────────────
 function showToast(msg) {
@@ -1104,6 +1021,7 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2200);
 }
+window.showToast = showToast;
 </script>
 </body>
 </html>
