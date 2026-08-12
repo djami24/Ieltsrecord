@@ -120,6 +120,8 @@ function saveEntries() {
     };
     localStorage.setItem(ENTRIES_KEY, JSON.stringify(payload));
   } catch {}
+  // Firebase ga ham saqlash (async, UI ni bloklamaydi)
+  if (window._fbSaveEntries) window._fbSaveEntries(entries);
 }
 
 let entries = loadEntries();
