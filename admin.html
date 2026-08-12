@@ -158,6 +158,64 @@
     /* MAIN GRID */
     .admin-body { padding: 20px; max-width: 900px; margin: 0 auto; }
 
+    /* ADMIN NAV TABS */
+    .admin-nav { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+    .admin-nav .tab-btn {
+      padding: 7px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 13px;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .admin-nav .tab-btn.active, .admin-nav .tab-btn:hover {
+      border-color: rgba(245,200,66,.4);
+      color: var(--gold);
+      background: rgba(245,200,66,.06);
+    }
+
+    /* ABOUT EDITOR FORM */
+    .form-section { margin-bottom: 22px; }
+    .form-section:last-child { margin-bottom: 0; }
+    .form-section-title {
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--gold);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .form-row { margin-bottom: 14px; }
+    .form-row:last-child { margin-bottom: 0; }
+    .form-row label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .form-input, .form-textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .form-input:focus, .form-textarea:focus { border-color: rgba(245,200,66,.45); }
+    .form-textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 560px) { .form-grid-2 { grid-template-columns: 1fr; } }
+    .form-hint { font-size: 11px; color: var(--muted2); margin-top: 4px; }
+
     /* STATS ROW */
     .stats-grid {
       display: grid;
@@ -433,71 +491,233 @@
 
   <div class="admin-body">
 
-    <!-- STATS -->
-    <div class="stats-grid" id="statsGrid">
-      <div class="stat-card">
-        <div class="label">Jami Talabalar</div>
-        <div class="value" id="statTotal">—</div>
-        <div class="sublabel">localStorage yozuvlari</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Bugun Faol</div>
-        <div class="value" id="statToday">—</div>
-        <div class="sublabel">oxirgi 24 soat</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">Hafta Ichida</div>
-        <div class="value" id="statWeek">—</div>
-        <div class="sublabel">oxirgi 7 kun</div>
-      </div>
-      <div class="stat-card">
-        <div class="label">O'rtacha Ball</div>
-        <div class="value" id="statAvg">—</div>
-        <div class="sublabel">barcha talabalar</div>
-      </div>
+    <!-- TABS -->
+    <div class="admin-nav">
+      <button class="tab-btn active" id="tabBtnStudents" type="button" onclick="switchAdminTab('students', this)">Talabalar</button>
+      <button class="tab-btn" id="tabBtnAbout" type="button" onclick="switchAdminTab('about', this)">Dastur haqida</button>
     </div>
 
-    <!-- SESSION TABLE -->
-    <div class="section-title">Talabalar Sessiyalari</div>
-    <div class="session-card">
-      <div class="session-toolbar">
-        <div class="filter-row">
-          <button class="filter-btn active" onclick="setFilter('all',this)">Hammasi</button>
-          <button class="filter-btn" onclick="setFilter('active',this)">Faol (24s)</button>
-          <button class="filter-btn" onclick="setFilter('week',this)">Hafta</button>
-          <button class="filter-btn" onclick="setFilter('new',this)">Yangi</button>
+    <!-- TALABALAR BO'LIMI -->
+    <div id="studentsSection">
+
+      <!-- STATS -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="label">Jami Talabalar</div>
+          <div class="value" id="statTotal">—</div>
+          <div class="sublabel">localStorage yozuvlari</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input class="search-input" type="text" id="searchInput" placeholder="Qurilma yoki ID izlash..." oninput="applyFilter()"/>
-          <button class="export-btn" onclick="exportSessions()">CSV yuklash</button>
+        <div class="stat-card">
+          <div class="label">Bugun Faol</div>
+          <div class="value" id="statToday">—</div>
+          <div class="sublabel">oxirgi 24 soat</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Hafta Ichida</div>
+          <div class="value" id="statWeek">—</div>
+          <div class="sublabel">oxirgi 7 kun</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">O'rtacha Ball</div>
+          <div class="value" id="statAvg">—</div>
+          <div class="sublabel">barcha talabalar</div>
         </div>
       </div>
-      <div style="overflow-x:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>Talaba ID</th>
-              <th>Oxirgi Faollik</th>
-              <th>Qurilma</th>
-              <th>Jami Testlar</th>
-              <th>So'nggi Ball</th>
-              <th>Tendensiya</th>
-              <th>Holat</th>
-            </tr>
-          </thead>
-          <tbody id="sessionBody"></tbody>
-        </table>
+
+      <!-- SESSION TABLE -->
+      <div class="section-title">Talabalar Sessiyalari</div>
+      <div class="session-card">
+        <div class="session-toolbar">
+          <div class="filter-row">
+            <button class="filter-btn active" onclick="setFilter('all',this)">Hammasi</button>
+            <button class="filter-btn" onclick="setFilter('active',this)">Faol (24s)</button>
+            <button class="filter-btn" onclick="setFilter('week',this)">Hafta</button>
+            <button class="filter-btn" onclick="setFilter('new',this)">Yangi</button>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="search-input" type="text" id="searchInput" placeholder="Qurilma yoki ID izlash..." oninput="applyFilter()"/>
+            <button class="export-btn" onclick="exportSessions()">CSV yuklash</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Talaba ID</th>
+                <th>Oxirgi Faollik</th>
+                <th>Qurilma</th>
+                <th>Jami Testlar</th>
+                <th>So'nggi Ball</th>
+                <th>Tendensiya</th>
+                <th>Holat</th>
+              </tr>
+            </thead>
+            <tbody id="sessionBody"></tbody>
+          </table>
+        </div>
       </div>
+
+      <!-- INFO NOTE -->
+      <div style="background:rgba(245,200,66,.06);border:1px solid rgba(245,200,66,.18);border-radius:14px;padding:14px 16px;font-size:13px;color:var(--muted);line-height:1.6">
+        <strong style="color:var(--gold)">ℹ️ Eslatma:</strong> Ushbu admin paneli har bir brauzer/qurilmadagi localStorage ma'lumotlarini kuzatadi. 
+        Talabalar bir qurilmadan foydalanganda ularning barcha natijalari ko'rinadi. 
+        Turli qurilmadan kiruvchi talabalar alohida sessiya sifatida ko'rsatiladi.
+        <br><br>
+        <strong style="color:var(--gold)">🔴 Real vaqt kuzatuvi:</strong> Talaba shu brauzerda ochiq bo'lsa, "Faol" holati ko'rinadi. 
+        Admin panel har 30 soniyada avtomatik yangilanadi.
+      </div>
+
     </div>
 
-    <!-- INFO NOTE -->
-    <div style="background:rgba(245,200,66,.06);border:1px solid rgba(245,200,66,.18);border-radius:14px;padding:14px 16px;font-size:13px;color:var(--muted);line-height:1.6">
-      <strong style="color:var(--gold)">ℹ️ Eslatma:</strong> Ushbu admin paneli har bir brauzer/qurilmadagi localStorage ma'lumotlarini kuzatadi. 
-      Talabalar bir qurilmadan foydalanganda ularning barcha natijalari ko'rinadi. 
-      Turli qurilmadan kiruvchi talabalar alohida sessiya sifatida ko'rsatiladi.
-      <br><br>
-      <strong style="color:var(--gold)">🔴 Real vaqt kuzatuvi:</strong> Talaba shu brauzerda ochiq bo'lsa, "Faol" holati ko'rinadi. 
-      Admin panel har 30 soniyada avtomatik yangilanadi.
+    <!-- "DASTUR HAQIDA" TAHRIRLASH BO'LIMI -->
+    <div id="aboutSection" style="display:none">
+
+      <div class="section-title">"Dastur Haqida" Sahifasi Matnlari</div>
+      <div class="session-card" style="padding:20px">
+
+        <div class="form-section">
+          <div class="form-section-title">Sarlavha (Hero)</div>
+          <div class="form-row">
+            <label for="edit_heroBadge">Belgi (badge)</label>
+            <input class="form-input" type="text" id="edit_heroBadge"/>
+          </div>
+          <div class="form-row">
+            <label for="edit_heroTitle">Asosiy sarlavha</label>
+            <input class="form-input" type="text" id="edit_heroTitle"/>
+            <div class="form-hint">HTML belgilariga ruxsat berilgan, mas. &lt;em&gt;so'z&lt;/em&gt; qalin-kursiv qismni belgilaydi.</div>
+          </div>
+          <div class="form-row">
+            <label for="edit_heroLead">Tavsif matni</label>
+            <textarea class="form-textarea" id="edit_heroLead"></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">1-Kartochka</div>
+          <div class="form-row">
+            <label for="edit_card1Kicker">Kichik sarlavha</label>
+            <input class="form-input" type="text" id="edit_card1Kicker"/>
+          </div>
+          <div class="form-row">
+            <label for="edit_card1Title">Sarlavha</label>
+            <input class="form-input" type="text" id="edit_card1Title"/>
+          </div>
+          <div class="form-row">
+            <label for="edit_card1Text">Matn</label>
+            <textarea class="form-textarea" id="edit_card1Text"></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">2-Kartochka</div>
+          <div class="form-row">
+            <label for="edit_card2Kicker">Kichik sarlavha</label>
+            <input class="form-input" type="text" id="edit_card2Kicker"/>
+          </div>
+          <div class="form-row">
+            <label for="edit_card2Title">Sarlavha</label>
+            <input class="form-input" type="text" id="edit_card2Title"/>
+          </div>
+          <div class="form-row">
+            <label for="edit_card2Text">Matn</label>
+            <textarea class="form-textarea" id="edit_card2Text"></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Statistikalar</div>
+          <div class="form-grid-2">
+            <div class="form-row">
+              <label for="edit_stat1Value">1-son</label>
+              <input class="form-input" type="text" id="edit_stat1Value"/>
+            </div>
+            <div class="form-row">
+              <label for="edit_stat1Label">1-izoh</label>
+              <input class="form-input" type="text" id="edit_stat1Label"/>
+            </div>
+            <div class="form-row">
+              <label for="edit_stat2Value">2-son</label>
+              <input class="form-input" type="text" id="edit_stat2Value"/>
+            </div>
+            <div class="form-row">
+              <label for="edit_stat2Label">2-izoh</label>
+              <input class="form-input" type="text" id="edit_stat2Label"/>
+            </div>
+            <div class="form-row">
+              <label for="edit_stat3Value">3-son</label>
+              <input class="form-input" type="text" id="edit_stat3Value"/>
+            </div>
+            <div class="form-row">
+              <label for="edit_stat3Label">3-izoh</label>
+              <input class="form-input" type="text" id="edit_stat3Label"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Jamoa — 1 (mas. Zack)</div>
+          <div class="form-row">
+            <label for="edit_team1Kicker">Kichik sarlavha</label>
+            <input class="form-input" type="text" id="edit_team1Kicker"/>
+          </div>
+          <div class="form-row">
+            <label for="edit_team1Name">Ism</label>
+            <input class="form-input" type="text" id="edit_team1Name"/>
+          </div>
+          <div class="form-row">
+            <label for="edit_team1Text">Matn</label>
+            <textarea class="form-textarea" id="edit_team1Text"></textarea>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-row">
+              <label for="edit_team1BtnText">Tugma matni</label>
+              <input class="form-input" type="text" id="edit_team1BtnText"/>
+            </div>
+            <div class="form-row">
+              <label for="edit_team1BtnUrl">Tugma havolasi (URL)</label>
+              <input class="form-input" type="text" id="edit_team1BtnUrl"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Jamoa — 2 (mas. Dasturchi)</div>
+          <div class="form-row">
+            <label for="edit_team2Kicker">Kichik sarlavha</label>
+            <input class="form-input" type="text" id="edit_team2Kicker"/>
+          </div>
+          <div class="form-row">
+            <label for="edit_team2Name">Ism</label>
+            <input class="form-input" type="text" id="edit_team2Name"/>
+          </div>
+          <div class="form-row">
+            <label for="edit_team2Text">Matn</label>
+            <textarea class="form-textarea" id="edit_team2Text"></textarea>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-row">
+              <label for="edit_team2BtnText">Tugma matni</label>
+              <input class="form-input" type="text" id="edit_team2BtnText"/>
+            </div>
+            <div class="form-row">
+              <label for="edit_team2BtnUrl">Tugma havolasi (URL)</label>
+              <input class="form-input" type="text" id="edit_team2BtnUrl"/>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+          <button class="login-btn" style="width:auto;padding:10px 22px" onclick="saveAboutContent()">Saqlash</button>
+          <button class="btn-pill" type="button" onclick="resetAboutContent()">Standart holatga qaytarish</button>
+          <a class="btn-pill" href="about.html" target="_blank">Sahifani ko'rish</a>
+        </div>
+      </div>
+
+      <div style="background:rgba(245,200,66,.06);border:1px solid rgba(245,200,66,.18);border-radius:14px;padding:14px 16px;font-size:13px;color:var(--muted);line-height:1.6;margin-top:16px">
+        <strong style="color:var(--gold)">ℹ️ Eslatma:</strong> Bu matnlar ushbu brauzerning localStorage xotirasida saqlanadi.
+        O'zgarishlar shu qurilma/brauzerda "Dastur haqida" sahifasini ochgan har bir kishiga ko'rinadi.
+      </div>
+
     </div>
 
   </div>
@@ -520,11 +740,42 @@
 <script>
 // ── CONFIG ──────────────────────────────────────────
 // Admin parolini shu yerda o'zgartiring:
-const ADMIN_PASSWORD = 'nylc2024';
+const ADMIN_PASSWORD = 'record';
 const ENTRIES_KEY = 'nylc_ielts_entries';
 const ADMIN_SESSION_KEY = 'nylc_admin_session';
 const VISITOR_LOG_KEY = 'nylc_visitor_log';
 const VISITOR_ID_KEY = 'nylc_visitor_id';
+
+// "Dastur haqida" sahifasi matnlari - about.html shu bilan bir xil
+// kalit (key) va standart qiymatlarni ishlatadi.
+const ABOUT_CONTENT_KEY = 'nylc_about_content';
+const DEFAULT_ABOUT_CONTENT = {
+  heroBadge: "Dastur haqida",
+  heroTitle: "Jiddiy <em>IELTS o'sishi</em> uchun yaratilgan.",
+  heroLead: "IELTS Tracker talabalar o'z natijalarini aniq ko'rishiga, zaif tomonlarini tezda aniqlab olishiga va birinchi mock testdan yakuniy imtihongacha izchil bo'lishiga yordam beradi.",
+  card1Kicker: "Maqsad",
+  card1Title: "Tayyorgarlikni o'lchanadigan qiling",
+  card1Text: "Biz tarqoq test natijalarini aniq bir hikoyaga aylantiramiz, shunda talabalar va o'qituvchilar har haftada yaxshiroq qarorlar qabul qila olsin.",
+  card2Kicker: "Nima uchun ishlaydi",
+  card2Title: "Oddiy oqim, aniq fikr-mulohaza",
+  card2Text: "Soniyalar ichida ball kiriting, grafikda tendensiyalarni kuzating va har test so'ng qisqa izoh qoldiring — maqsadli rivojlaning.",
+  stat1Value: "4",
+  stat1Label: "Asosiy ko'nikmalar kuzatiladi",
+  stat2Value: "1",
+  stat2Label: "Aniq rivojlanish jadvali",
+  stat3Value: "∞",
+  stat3Label: "Rivojlanish uchun imkoniyat",
+  team1Kicker: "Yordam",
+  team1Name: "Zack",
+  team1Text: "Zack — New York O'quv Markazidagi o'qituvchi bo'lib, talabalarga to'g'ridan-to'g'ri yordam beradi. Ko'rsatma va qo'llab-quvvatlash uchun Telegramda unga murojaat qiling.",
+  team1BtnText: "Zack bilan bog'lanish",
+  team1BtnUrl: "https://t.me/Bro_Zuck",
+  team2Kicker: "Dasturchi",
+  team2Name: "Ilova Dasturchi",
+  team2Text: "Loyiha amalga oshirish va mahsulot ishlab chiqish. GitHub'da yangilanishlar va kod faoliyatini kuzating.",
+  team2BtnText: "github.com/IConanEdogawa",
+  team2BtnUrl: "https://github.com/IConanEdogawa",
+};
 
 // ── VISITOR TRACKING ──────────────────────────────
 // Har bir talaba brauzerda o'ziga xos ID oladi va
@@ -857,6 +1108,51 @@ function exportSessions() {
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
   showToast('CSV yuklandi ✓');
+}
+
+// ── ADMIN TABS ─────────────────────────────────────
+function switchAdminTab(name, btn) {
+  document.querySelectorAll('.admin-nav .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('studentsSection').style.display = name === 'students' ? '' : 'none';
+  document.getElementById('aboutSection').style.display = name === 'about' ? '' : 'none';
+  if (name === 'about') loadAboutEditor();
+}
+
+// ── "DASTUR HAQIDA" TAHRIRLASH ─────────────────────
+function getAboutContent() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(ABOUT_CONTENT_KEY) || '{}') || {}; } catch {}
+  return Object.assign({}, DEFAULT_ABOUT_CONTENT, saved);
+}
+
+function loadAboutEditor() {
+  const c = getAboutContent();
+  Object.keys(DEFAULT_ABOUT_CONTENT).forEach(key => {
+    const el = document.getElementById('edit_' + key);
+    if (el) el.value = c[key];
+  });
+}
+
+function saveAboutContent() {
+  const c = {};
+  Object.keys(DEFAULT_ABOUT_CONTENT).forEach(key => {
+    const el = document.getElementById('edit_' + key);
+    c[key] = el ? el.value : DEFAULT_ABOUT_CONTENT[key];
+  });
+  try {
+    localStorage.setItem(ABOUT_CONTENT_KEY, JSON.stringify(c));
+    showToast("Dastur haqida sahifasi yangilandi ✓");
+  } catch {
+    showToast("Saqlashda xatolik yuz berdi");
+  }
+}
+
+function resetAboutContent() {
+  if (!confirm("Barcha matnlarni standart holatga qaytarishni xohlaysizmi?")) return;
+  try { localStorage.removeItem(ABOUT_CONTENT_KEY); } catch {}
+  loadAboutEditor();
+  showToast("Standart holatga qaytarildi ✓");
 }
 
 // ── TOAST ──────────────────────────────────────────
