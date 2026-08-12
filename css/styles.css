@@ -1032,6 +1032,12 @@ canvas { display: block; }
   z-index: 20;
   pointer-events: none;
 }
+
+@media (min-width: 980px) {
+  .powered-by {
+    right: calc(50% - 582px);
+  }
+}
 .powered-by span {
   font-size: 9px;
   font-style: italic;
