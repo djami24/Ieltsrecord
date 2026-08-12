@@ -689,6 +689,22 @@
 
 <div class="toast" id="toast"></div>
 
+<script>
+// Bridge: onclick handlers call these; they forward to the module functions
+// which attach themselves to window after the module loads.
+function doLogin() { if(window.doLogin) window.doLogin(); }
+function doLogout() { if(window.doLogout) window.doLogout(); }
+function setFilter(f,btn) { if(window.setFilter) window.setFilter(f,btn); }
+function exportSessions() { if(window.exportSessions) window.exportSessions(); }
+function switchAdminTab(n,b) { if(window.switchAdminTab) window.switchAdminTab(n,b); }
+function openDetail(id) { if(window.openDetail) window.openDetail(id); }
+function closeDetail(e) { if(window.closeDetail) window.closeDetail(e); }
+function closeDetailPanel() { if(window.closeDetailPanel) window.closeDetailPanel(); }
+function saveAboutContent() { if(window.saveAboutContent) window.saveAboutContent(); }
+function resetAboutContent() { if(window.resetAboutContent) window.resetAboutContent(); }
+function showToast(m) { if(window.showToast) window.showToast(m); }
+</script>
+
 <script type="module">
 // ── FIREBASE ──────────────────────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
