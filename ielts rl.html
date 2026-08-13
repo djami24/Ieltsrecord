@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>IELTS R&amp;L</title>
+<title>IELTS R&L Tracker</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#9B1C2E">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -21,12 +21,12 @@
     <a class="header-link" href="admin.html" style="color:var(--gold);font-weight:600">Admin</a>
   </div>
   <div class="badge-row">
-    <div class="badge" style="margin-bottom:0"><span class="badge-dot"></span>IELTS R&amp;L</div>
     <a class="badge" href="cefr.html" style="margin-bottom:0;text-decoration:none;cursor:pointer">CEFR Tracker</a>
+    <div class="badge" style="margin-bottom:0"><span class="badge-dot"></span>IELTS R&L</div>
     <a class="badge" href="main.html" style="margin-bottom:0;text-decoration:none;cursor:pointer">IELTS Tracker</a>
   </div>
-  <h1 id="rlHeading">O'z <em>natijalaringizni</em> kuzating.</h1>
-  <p>Tinglash va O'qish ballaringizni kiriting (40 balldan), zaif tomonlaringizni aniqlang va o'sishingizni kuzating.</p>
+  <h1 id="ielrlHeading">O'z <em>natijalaringizni</em> kuzating.</h1>
+  <p>Reading va Listening ballaringizni kiriting (40 balldan), zaif tomonlaringizni aniqlang va o'sishingizni kuzating.</p>
 </div>
 
 <!-- TABLAR -->
@@ -41,7 +41,7 @@
   <div class="card">
     <div class="card-title-row">
       <div class="card-title" id="entryFormTitle">Yangi Test Natijasi</div>
-      <button class="btn-inline" id="cancelEditBtn" type="button" onclick="cancelTahrirlash()" style="display:none">Tahrirlashni bekor qilish</button>
+      <button class="btn-inline" id="cancelEditBtn" type="button" onclick="cancelEdit()" style="display:none">Tahrirlashni bekor qilish</button>
     </div>
 
     <div class="date-row">
@@ -245,7 +245,7 @@ if ('serviceWorker' in navigator) {
   const NAME_KEY = 'nylc_student_name';
   const name = localStorage.getItem(NAME_KEY);
   if (name) {
-    const h1 = document.getElementById('rlHeading');
+    const h1 = document.getElementById('ielrlHeading');
     if (h1) {
       h1.innerHTML = h1.innerHTML.replace(
         "O'z <em>natijalaringizni</em> kuzating.",
