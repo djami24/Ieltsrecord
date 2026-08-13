@@ -1,22 +1,18 @@
-// ── DATA (IELTS Reading & Listening — raw score 0-40) ──────────────────
+// в”Ђв”Ђ DATA в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 const SECTIONS = [
-  { key: "listening", label: "Tinglash", icon: "\u{1F3A7}", color: "#2DD4BF" },
-  { key: "reading",   label: "O'qish",   icon: "\u{1F4D6}", color: "#60A5FA" },
+  { key: "listening",  label: "Tinglash",  icon: "\u{1F3A7}", color: "#2DD4BF" },
+  { key: "reading",    label: "O'qish",    icon: "\u{1F4D6}", color: "#60A5FA" },
 ];
-
-const MAX_SCORE = 40;
-const DEFAULT_SCORE = 20;
-const DEFAULT_TARGET = 30;
 
 const TIPS = {
   listening: [
     "BBC podkastlari bilan mashq qiling - tez nutqni kuzatishga e'tibor bering.",
-    "Har kuni 1 ta IELTS tinglash mock testini bajaring. Har bir noto'g'ri javobni ko'rib chiqing.",
+    "Har kuni 1 ta tinglash mock testini bajaring. Har bir noto'g'ri javobni ko'rib chiqing.",
     "TED ma'ruzalarini tinglang va to'xtatmasdan asosiy fikrlarni yozing.",
   ],
   reading: [
     "Avval sarlavhalarni ko'zdan kechiring, so'ng savollardagi kalit so'zlarni qidiring.",
-    "Ha/Yo'q/Ko'rsatilmagan mashqlarini bajaring - ko'pchilik talabalar shu yerda ball yo'qotadi.",
+    "Ko'p variantli va moslashtirish mashqlarini bajaring - ko'pchilik talabalar shu yerda ball yo'qotadi.",
     "Vaqtingizni o'lchang: har bir matn uchun maksimal 20 daqiqa.",
   ],
 };
@@ -32,9 +28,9 @@ const CARD_COLORS = [
   { bg: "rgba(167,139,250,.07)", border: "rgba(167,139,250,.18)" },  // violet
 ];
 
-const ENTRIES_KEY = "nylc_rl_entries";
+const ENTRIES_KEY = "nylc_ielts_rl_entries";
 const ENTRIES_VERSION = 1;
-const SETTINGS_KEY = "nylc_ielts_settings"; // shared theme/insights settings across all trackers
+const SETTINGS_KEY = "nylc_ielts_settings";
 const DEFAULT_SETTINGS = {
   theme: "system",
   insights: {
@@ -52,16 +48,21 @@ function isValidDateString(value) {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
-function clampScore(value) {
+function genEntryId() {
+  return "e_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 9);
+}
+
+function clampBand(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return null;
-  return Math.min(MAX_SCORE, Math.max(0, Math.round(num)));
+  return Math.min(40, Math.max(0, Math.round(num)));
 }
 
 function normalizeEntry(raw) {
   if (!raw || !isValidDateString(raw.date)) return null;
 
   const entry = {
+    id: (raw.id && typeof raw.id === "string") ? raw.id : genEntryId(),
     date: raw.date,
     manualOverall: !!raw.manualOverall,
     mood: String(raw.mood || "").trim(),
@@ -69,13 +70,13 @@ function normalizeEntry(raw) {
 
   let sum = 0;
   for (const section of SECTIONS) {
-    const safe = clampScore(raw[section.key]);
+    const safe = clampBand(raw[section.key]);
     if (safe === null) return null;
     entry[section.key] = safe;
     sum += safe;
   }
 
-  const rawOverall = clampScore(raw.umumiy);
+  const rawOverall = clampBand(raw.umumiy);
   entry.umumiy = rawOverall === null ? Math.round(sum / SECTIONS.length) : rawOverall;
   return entry;
 }
@@ -93,7 +94,7 @@ function loadEntries() {
     for (const item of list) {
       const normalized = normalizeEntry(item);
       if (!normalized) continue;
-      dedup.set(normalized.date, normalized);
+      dedup.set(normalized.id, normalized);
     }
 
     const result = Array.from(dedup.values()).sort((a, b) => a.date.localeCompare(b.date));
@@ -117,7 +118,7 @@ function saveEntries() {
 let entries = loadEntries();
 let settings = loadSettings();
 
-const TARGETS_KEY = "nylc_rl_targets";
+const TARGETS_KEY = "nylc_ielts_rl_targets";
 let umumiyEnabled = false;
 let moodOpen = false;
 let currentPeriod = "all";
@@ -125,38 +126,37 @@ let historyFilter = "all";
 let lineChart = null;
 let radarChart = null;
 let targets = loadMaqsadlar();
-let editingEntryDate = null;
+let editingEntryId = null;
 
-// ── INIT ─────────────────────────────────────────────────────────────
+// в”Ђв”Ђ INIT в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
 buildSliders();
 renderMaqsadlar();
 renderHistory();
 renderCharts();
 renderMaslahatlar();
-applyInsightsVisibility();
-syncThemeToggleBtn();
+updateAiMaslahatlarVisibility();
 window.addEventListener("themechange", () => {
   renderCharts();
   renderMaslahatlar();
-  syncThemeToggleBtn();
+  updateAiMaslahatlarVisibility();
 });
 
-// ── SLIDERS ──────────────────────────────────────────────────────────
+// в”Ђв”Ђ SLIDERS в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function buildSliders() {
   const wrap = document.getElementById("sliders");
-  wrap.innerHTML = SECTIONS.map(s => sliderHTML(s.key, s.label, s.icon, s.color, DEFAULT_SCORE)).join("");
+  wrap.innerHTML = SECTIONS.map(s => sliderHTML(s.key, s.label, s.icon, s.color, 20)).join("");
 
   const owrap = document.getElementById("overallSliderWrap");
-  owrap.innerHTML = sliderHTML("umumiy", "Overall", "\u2605", "#F5C842", DEFAULT_SCORE);
+  owrap.innerHTML = sliderHTML("umumiy", "Overall", "\u2605", "#F5C842", 20);
 
   document.querySelectorAll(".ielts-slider").forEach(el => {
     updateSliderFill(el);
     el.addEventListener("input", function() {
       updateSliderFill(this);
       const key = this.dataset.key;
-      const val = parseInt(this.value, 10);
-      document.getElementById("score-" + key).textContent = val;
+      const val = parseFloat(this.value);
+      document.getElementById("score-" + key).textContent = val.toFixed(0);
       document.getElementById("score-" + key).style.color = scoreColor(val);
     });
   });
@@ -170,25 +170,25 @@ function sliderHTML(key, label, icon, color, def) {
         <div class="section-icon" style="background:${color}18">${icon}</div>
         ${label}
       </div>
-      <div class="section-score" id="score-${key}" style="color:${scoreColor(def)}">${def}</div>
+      <div class="section-score" id="score-${key}" style="color:${scoreColor(def)}">${def.toFixed(0)}</div>
     </div>
     <div class="slider-wrap">
       <input type="range" class="ielts-slider" id="slider-${key}" data-key="${key}"
-             min="0" max="${MAX_SCORE}" step="1" value="${def}" style="--c:${color}"/>
+             min="0" max="40" step="1" value="${def}" style="--c:${color}"/>
     </div>
   </div>`;
 }
 
 function updateSliderFill(el) {
-  const pct = (el.value / MAX_SCORE) * 100;
+  const pct = (el.value / 40) * 100;
   const color = el.style.getPropertyValue("--c") || "#F5C842";
   el.style.background = `linear-gradient(to right, ${color} ${pct}%, var(--surface2) ${pct}%)`;
 }
 
 function scoreColor(v) {
-  if (v >= 33) return "#4ADE80";
+  if (v >= 34) return "#4ADE80";
   if (v >= 29) return "#2DD4BF";
-  if (v >= 24) return "#F5C842";
+  if (v >= 21) return "#F5C842";
   return "#FB7185";
 }
 
@@ -236,17 +236,17 @@ function getChartTheme() {
   };
 }
 
-// ── OVERALL TOGGLE ───────────────────────────────────────────────────
+// в”Ђв”Ђ OVERALL TOGGLE в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function toggleOverall() {
   setOverallMode(!umumiyEnabled);
 }
 
-// ── MOOD TOGGLE ──────────────────────────────────────────────────────
+// в”Ђв”Ђ MOOD TOGGLE в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function toggleMood() {
   setMoodOpen(!moodOpen);
 }
 
-// ── ADD ENTRY ────────────────────────────────────────────────────────
+// в”Ђв”Ђ ADD ENTRY в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function addEntry() {
   const date = document.getElementById("entryDate").value;
   if (!date) { showToast("Avval sana tanlang"); return; }
@@ -255,17 +255,17 @@ function addEntry() {
   const entry = { date, manualOverall: umumiyEnabled, mood };
   let sum = 0;
   SECTIONS.forEach(s => {
-    const v = parseInt(document.getElementById("slider-" + s.key).value, 10);
+    const v = parseFloat(document.getElementById("slider-" + s.key).value);
     entry[s.key] = v;
     sum += v;
   });
 
   const calculatedOverall = Math.round(sum / SECTIONS.length);
   if (umumiyEnabled) {
-    entry.umumiy = parseInt(document.getElementById("slider-umumiy").value, 10);
-    if (entry.umumiy !== calculatedOverall) {
+    entry.umumiy = parseFloat(document.getElementById("slider-umumiy").value);
+    if (Math.abs(entry.umumiy - calculatedOverall) > 0.001) {
       const ok = window.confirm(
-        `Manual umumiy (${entry.umumiy}) hisoblanganidan farq qiladi (${calculatedOverall}). Qo'lda kiritilgan qiymatni saqlamoqchi?`
+        `Manual umumiy (${entry.umumiy.toFixed(0)}) hisoblanganidan farq qiladi (${calculatedOverall.toFixed(0)}). Qo'lda kiritilgan qiymatni saqlamoqchi?`
       );
       if (!ok) {
         showToast("Saqlash bekor qilindi");
@@ -276,46 +276,30 @@ function addEntry() {
     entry.umumiy = calculatedOverall;
   }
 
-  if (editingEntryDate) {
-    const sameDateOther = entries.findIndex(e => e.date === date && e.date !== editingEntryDate);
-    if (sameDateOther >= 0) {
-      const shouldReplace = window.confirm("Bu sanada boshqa yozuv mavjud. Uni almashtirmoqchi?");
-      if (!shouldReplace) {
-        showToast("Yangilash bekor qilindi");
-        return;
-      }
-      entries.splice(sameDateOther, 1);
-    }
-    entries = entries.filter(e => e.date !== editingEntryDate);
+  if (editingEntryId) {
+    entry.id = editingEntryId;
+    entries = entries.filter(e => e.id !== editingEntryId);
     entries.push(entry);
   } else {
-    const duplicateIndex = entries.findIndex(e => e.date === date);
-    if (duplicateIndex >= 0) {
-      const shouldReplace = window.confirm("Bu sanada yozuv allaqachon mavjud. Uni almashtirmoqchi?");
-      if (!shouldReplace) {
-        showToast("Saqlash bekor qilindi");
-        return;
-      }
-      entries[duplicateIndex] = entry;
-    } else {
-      entries.push(entry);
-    }
+    entry.id = genEntryId();
+    entries.push(entry);
   }
   entries.sort((a,b) => a.date.localeCompare(b.date));
   saveEntries();
 
-  const wasTahrirlashing = Boolean(editingEntryDate);
+  const wasTahrirlashing = Boolean(editingEntryId);
   resetEntryForm();
   exitTahrirlashMode();
 
   renderHistory();
   renderCharts();
   renderMaslahatlar();
+  updateAiMaslahatlarVisibility();
   showToast(wasTahrirlashing ? "Yozuv yangilandi \u2713" : "Yozuv saqlandi \u2713");
   switchTab("history");
 }
 
-// ── HISTORY ──────────────────────────────────────────────────────────
+// в”Ђв”Ђ HISTORY в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function renderHistory() {
   const el = document.getElementById("historyList");
   const filtered = getFilteredHistoryEntries();
@@ -343,16 +327,16 @@ function entryWrapHTML(e, i, total, prev) {
 
 function entryCardHTML(e, col, prev) {
   col = col || CARD_COLORS[0];
-  const isTahrirlashing = editingEntryDate === e.date;
+  const isTahrirlashing = editingEntryId === e.id;
   const d = new Date(e.date);
   const dateStr = d.toLocaleDateString("uz-UZ", { day:"numeric", month:"short", year:"numeric" });
   const bars = SECTIONS.map(s => `
     <div class="entry-bar-item">
       <div class="entry-bar-label">${s.label}</div>
       <div class="entry-bar-track">
-        <div class="entry-bar-fill" style="width:${(e[s.key]/MAX_SCORE*100).toFixed(1)}%;background:${s.color}"></div>
+        <div class="entry-bar-fill" style="width:${(e[s.key]/40*100).toFixed(0)}%;background:${s.color}"></div>
       </div>
-      <div class="entry-bar-val" style="color:${s.color}">${e[s.key]}</div>
+      <div class="entry-bar-val" style="color:${s.color}">${e[s.key].toFixed(0)}</div>
     </div>`).join("");
 
   const moodHTML = e.mood ? `<div class="entry-mood">${e.mood}</div>` : "";
@@ -363,22 +347,22 @@ function entryCardHTML(e, col, prev) {
     const sign = diff > 0 ? "+" : "";
     const col2 = diff > 0 ? "var(--green)" : diff < 0 ? "var(--rose)" : "var(--muted2)";
     const arrow = diff > 0 ? "\u2191" : diff < 0 ? "\u2193" : "\u2192";
-    deltaHTML = `<div style="font-size:11px;font-family:'Poppins',sans-serif;color:${col2};margin-top:2px">${arrow} ${sign}${diff} umumiy</div>`;
+    deltaHTML = `<div style="font-size:11px;font-family:'Poppins',sans-serif;color:${col2};margin-top:2px">${arrow} ${sign}${diff.toFixed(0)} umumiy</div>`;
   }
 
   return `
-  <div class="entry-card ${isTahrirlashing ? 'is-editing' : ''}" data-date="${e.date}"
+  <div class="entry-card ${isTahrirlashing ? 'is-editing' : ''}" data-id="${e.id}"
        style="background:${col.bg};border-color:${col.border}">
     <div class="entry-top">
       <div>
         <div class="entry-date">${dateStr}</div>
-        <button type="button" class="btn-entry-edit" onclick="startTahrirlashEntry('${e.date}')">Tahrirlash</button>
+        <button type="button" class="btn-entry-edit" onclick="startTahrirlashEntry('${e.id}')">Tahrirlash</button>
         ${e.manualOverall ? '<div style="font-size:10px;color:var(--muted2);margin-top:2px;font-family:Poppins,sans-serif">rasmiy</div>' : ''}
         ${deltaHTML}
       </div>
       <div class="entry-actions">
-        <button type="button" class="btn-entry-delete" onclick="deleteEntry('${e.date}')">O'chirish</button>
-        <div class="entry-umumiy">${e.umumiy}<span>umumiy</span></div>
+        <button type="button" class="btn-entry-delete" onclick="deleteEntry('${e.id}')">O'chirish</button>
+        <div class="entry-umumiy">${e.umumiy.toFixed(0)}<span>umumiy</span></div>
       </div>
     </div>
     <div class="entry-bars">${bars}</div>
@@ -386,11 +370,11 @@ function entryCardHTML(e, col, prev) {
   </div>`;
 }
 
-function deleteEntry(date) {
-  const targetDate = String(date).trim();
+function deleteEntry(id) {
+  const targetId = String(id).trim();
   const removeAndRefresh = () => {
     const before = entries.length;
-    entries = entries.filter(e => String(e.date).trim() !== targetDate);
+    entries = entries.filter(e => String(e.id).trim() !== targetId);
     if (entries.length === before) {
       showToast("O\'chirish muvaffaqiyatsiz: yozuv topilmadi");
       return;
@@ -399,10 +383,11 @@ function deleteEntry(date) {
     renderHistory();
     renderCharts();
     renderMaslahatlar();
+    updateAiMaslahatlarVisibility();
     showToast("Yozuv o\'chirildi");
   };
 
-  const card = document.querySelector(`.entry-card[data-date="${targetDate}"]`);
+  const card = document.querySelector(`.entry-card[data-id="${targetId}"]`);
   if (!card) {
     removeAndRefresh();
     return;
@@ -412,7 +397,7 @@ function deleteEntry(date) {
   setTimeout(removeAndRefresh, 300);
 }
 
-// ── CHARTS ───────────────────────────────────────────────────────────
+// в”Ђв”Ђ CHARTS в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function filteredEntries() {
   return filterByPeriod(entries, currentPeriod);
 }
@@ -531,8 +516,8 @@ function renderModalChart() {
       },
       scales: {
         y: {
-          min: 0, max: MAX_SCORE,
-          ticks: { stepSize: 10, color: chartTheme.tick, font: { family: "Poppins", size: 11 } },
+          min: 0, max: 40,
+          ticks: { stepSize: 1.5, color: chartTheme.tick, font: { family: "Poppins", size: 11 } },
           grid: { color: chartTheme.grid },
           border: { display: false },
         },
@@ -615,9 +600,9 @@ function renderLineChart() {
       },
       scales: {
         y: {
-          min: 0, max: MAX_SCORE,
+          min: 0, max: 40,
           ticks: {
-            stepSize: 10,
+            stepSize: 1.5,
             color: chartTheme.tickSoft,
             font: { family: "Poppins", size: 10 },
           },
@@ -683,14 +668,14 @@ function renderRadarChart() {
           padding: 12,
           borderColor: chartTheme.tooltipBorder,
           borderWidth: 1,
-          callbacks: { label: ctx => ` ${ctx.raw.toFixed(1)}` }
+          callbacks: { label: ctx => ` ${ctx.raw.toFixed(0)}` }
         }
       },
       scales: {
         r: {
-          min: 0, max: MAX_SCORE,
+          min: 0, max: 40,
           ticks: {
-            stepSize: 10,
+            stepSize: 3,
             color: chartTheme.tickSofter,
             font: { family: "Poppins", size: 9 },
             backdropColor: "transparent",
@@ -707,7 +692,7 @@ function renderRadarChart() {
   });
 }
 
-// ── TIPS ─────────────────────────────────────────────────────────────
+// в”Ђв”Ђ TIPS в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function renderMaslahatlar() {
   if (!settings.insights.showTips) {
     const tipsEl = document.getElementById("tipsSection");
@@ -722,7 +707,8 @@ function renderMaslahatlar() {
 
   const last = entries[entries.length - 1];
   const scored = SECTIONS.map(s => ({ ...s, score: last[s.key] }))
-    .sort((a,b) => a.score - b.score);
+    .sort((a,b) => a.score - b.score)
+    .slice(0, 2);
 
   const html = `
     <div class="chart-label" style="margin-bottom:12px;font-size:11px;font-family:'Poppins',sans-serif;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)">Siz uchun maslahatlar</div>
@@ -730,7 +716,7 @@ function renderMaslahatlar() {
       const tip = TIPS[s.key][Math.floor(Math.random() * TIPS[s.key].length)];
       return `
       <div class="tip-card">
-        <div class="tip-section">${s.icon} ${s.label} &middot; ${s.score}</div>
+        <div class="tip-section">${s.icon} ${s.label} &middot; ${s.score.toFixed(0)}</div>
         <div class="tip-text">${tip}</div>
       </div>`;
     }).join('')}`;
@@ -738,7 +724,94 @@ function renderMaslahatlar() {
   document.getElementById("tipsSection").innerHTML = html;
 }
 
-// ── PERIOD ───────────────────────────────────────────────────────────
+// в”Ђв”Ђ AI TIPS в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+function updateAiMaslahatlarVisibility() {
+  const card = document.getElementById("aiTipsCard");
+  if (!card) return;
+  if (!settings.insights.showAiCoach) {
+    card.style.display = "none";
+    return;
+  }
+  card.style.display = entries.length >= 2 ? "block" : "none";
+}
+
+function pickRepresentativeEntries() {
+  if (!entries.length) return [];
+  const sorted = [...entries].sort((a,b) => a.umumiy - b.umumiy);
+  const worst = sorted[0];
+  const best = sorted[sorted.length - 1];
+  const midIdx = Math.floor(sorted.length / 2);
+  const mid = sorted[midIdx];
+  // deduplicate
+  const seen = new Set();
+  return [worst, mid, best].filter(e => {
+    if (seen.has(e.date)) return false;
+    seen.add(e.date);
+    return true;
+  });
+}
+
+async function fetchAiMaslahatlar() {
+  const btn = document.getElementById("btnAiTips");
+  const result = document.getElementById("aiTipsResult");
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="ai-typing"> Tahlil qilinmoqda</span>';
+  result.style.display = "block";
+  result.textContent = "";
+  result.classList.add("ai-typing");
+
+  const rep = pickRepresentativeEntries();
+
+  // Build a clean summary for the prompt
+  const summary = rep.map(e => {
+    const d = new Date(e.date).toLocaleDateString("uz-UZ", { month:"short", year:"numeric" });
+    const parts = SECTIONS.map(s => `${s.label}: ${e[s.key]}`).join(", ");
+    return `${d} - ${parts}, Overall: ${e.umumiy}${e.mood ? ` (note: "${e.mood}")` : ''}`;
+  }).join("\n");
+
+  const allOveralls = entries.map(e => e.umumiy);
+  const trend = allOveralls.length >= 2
+    ? (allOveralls[allOveralls.length-1] - allOveralls[0]).toFixed(0)
+    : "0";
+
+  const prompt = `Siz tajribali IELTS Reading va Listening murabbiyisiz. Ushbu talabaning natijalarini tahlil qiling va qisqa, to'g'ridan-to'g'ri, shaxsiylashtirilgan murabbiylik javobi bering (maksimal 3-5 ta jumla). Eng zaif bo'limlarga, sezilarli tendensiyalarga va ular qabul qilishi mumkin bo'lgan bitta aniq harakatga e'tibor bering. Aniq va rag'batlantiruvchi bo'ling, umumiy emas. Javobni o'zbek tilida bering.
+
+Student's representative results (worst, middle, best):
+${summary}
+
+Overall trend: ${trend > 0 ? '+' : ''}${trend} ball since first test.
+Total tests logged: ${entries.length}.
+
+Tahlilni o'zbek tilida oddiy matn ko'rinishida bering, markdown yoki ro'yxat belgisiz.`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.find(b => b.type === "text")?.text || "Tahlil yaratib bo'lmadi.";
+
+    result.classList.remove("ai-typing");
+    result.textContent = text;
+    btn.innerHTML = "<span>\u2726</span> Tahlilni yangilash";
+    btn.disabled = false;
+  } catch (err) {
+    result.classList.remove("ai-typing");
+    result.textContent = "Xatolik yuz berdi. Qayta urinib ko\'ring.";
+    btn.innerHTML = "<span>\u2726</span> Qayta urinish";
+    btn.disabled = false;
+  }
+}
+
+// в”Ђв”Ђ PERIOD в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function setPeriod(p, btn) {
   currentPeriod = p;
   document.querySelectorAll("#page-charts .chart-period .period-btn").forEach(b => b.classList.remove("active"));
@@ -770,7 +843,7 @@ function getPointRadius(pointCount, isModal) {
   return isModal ? 5 : 4;
 }
 
-// ── TABS ─────────────────────────────────────────────────────────────
+// в”Ђв”Ђ TABS в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function switchTab(name) {
   document.querySelectorAll(".tab").forEach((t,i) => {
     const names = ["add","history","charts"];
@@ -782,7 +855,7 @@ function switchTab(name) {
   document.querySelectorAll(".page").forEach(p => {
     p.classList.toggle("active", p.id === "page-" + name);
   });
-  if (name === "charts") { renderCharts(); renderMaslahatlar(); }
+  if (name === "charts") { renderCharts(); renderMaslahatlar(); updateAiMaslahatlarVisibility(); }
   if (name === "history") renderHistory();
 }
 
@@ -815,12 +888,13 @@ function loadSettings() {
 
 function applyInsightsVisibility() {
   const visibilityMap = [
-    ["kpiGrid", true],
-    ["comparisonCard", true],
-    ["targetsCard", true],
-    ["lineChartContainer", true],
-    ["radarCard", true],
-    ["tipsSection", true],
+    ["kpiGrid", settings.insights.showKpis],
+    ["comparisonCard", settings.insights.showComparison],
+    ["targetsCard", settings.insights.showTargets],
+    ["lineChartContainer", settings.insights.showProgress],
+    ["radarCard", settings.insights.showRadar],
+    ["tipsSection", settings.insights.showTips],
+    ["aiTipsCard", settings.insights.showAiCoach],
   ];
 
   visibilityMap.forEach(([id, visible]) => {
@@ -831,14 +905,14 @@ function applyInsightsVisibility() {
 }
 
 function loadMaqsadlar() {
-  const fallback = Object.fromEntries(SECTIONS.map(s => [s.key, DEFAULT_TARGET]));
+  const fallback = Object.fromEntries(SECTIONS.map(s => [s.key, 28]));
   try {
     const raw = localStorage.getItem(TARGETS_KEY);
     if (!raw) return fallback;
     const parsed = JSON.parse(raw);
     SECTIONS.forEach(s => {
       const v = Number(parsed?.[s.key]);
-      parsed[s.key] = Number.isFinite(v) ? Math.min(MAX_SCORE, Math.max(0, Math.round(v))) : fallback[s.key];
+      parsed[s.key] = Number.isFinite(v) ? Math.min(40, Math.max(0, v)) : fallback[s.key];
     });
     return parsed;
   } catch {
@@ -861,11 +935,11 @@ function renderMaqsadlar() {
           <div class="section-icon" style="background:${s.color}18">${s.icon}</div>
           ${s.label} target
         </div>
-        <div class="section-score" id="target-score-${s.key}" style="color:${scoreColor(targets[s.key])}">${targets[s.key]}</div>
+        <div class="section-score" id="target-score-${s.key}" style="color:${scoreColor(targets[s.key])}">${targets[s.key].toFixed(0)}</div>
       </div>
       <div class="slider-wrap">
         <input type="range" class="target-slider" data-key="${s.key}"
-               min="0" max="${MAX_SCORE}" step="1" value="${targets[s.key]}" style="--c:${s.color}"/>
+               min="0" max="40" step="1" value="${targets[s.key]}" style="--c:${s.color}"/>
       </div>
     </div>
   `).join("");
@@ -875,18 +949,18 @@ function renderMaqsadlar() {
     el.addEventListener("input", function() {
       updateSliderFill(this);
       const key = this.dataset.key;
-      const val = parseInt(this.value, 10);
+      const val = parseFloat(this.value);
       targets[key] = val;
       const score = document.getElementById("target-score-" + key);
-      score.textContent = val;
+      score.textContent = val.toFixed(0);
       score.style.color = scoreColor(val);
       saveMaqsadlar();
     });
   });
 }
 
-function resetTargets() {
-  targets = Object.fromEntries(SECTIONS.map(s => [s.key, DEFAULT_TARGET]));
+function resetMaqsadlar() {
+  targets = Object.fromEntries(SECTIONS.map(s => [s.key, 28]));
   saveMaqsadlar();
   renderMaqsadlar();
   showToast("Maqsadlar reset");
@@ -905,8 +979,9 @@ function setHistoryFilter(mode, btn) {
   renderHistory();
 }
 
-function cancelEdit() {
-  if (!editingEntryDate) return;
+
+function cancelTahrirlash() {
+  if (!editingEntryId) return;
   resetEntryForm();
   exitTahrirlashMode();
   renderHistory();
@@ -936,22 +1011,22 @@ function setSliderValue(key, value) {
   updateSliderFill(slider);
   const score = document.getElementById("score-" + key);
   if (score) {
-    score.textContent = Number(value);
+    score.textContent = Number(value).toFixed(0);
     score.style.color = scoreColor(Number(value));
   }
 }
 
 function resetEntryForm() {
   document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
-  SECTIONS.forEach(s => setSliderValue(s.key, DEFAULT_SCORE));
-  setSliderValue("umumiy", DEFAULT_SCORE);
+  SECTIONS.forEach(s => setSliderValue(s.key, 20));
+  setSliderValue("umumiy", 20);
   setOverallMode(false);
   document.getElementById("moodNote").value = "";
   setMoodOpen(false);
 }
 
 function exitTahrirlashMode() {
-  editingEntryDate = null;
+  editingEntryId = null;
   const btn = document.getElementById("cancelEditBtn");
   if (btn) btn.style.display = "none";
   const title = document.getElementById("entryFormTitle");
@@ -960,14 +1035,14 @@ function exitTahrirlashMode() {
   if (saveBtn) saveBtn.textContent = "Natijani Saqlash";
 }
 
-function startTahrirlashEntry(date) {
-  const entry = entries.find(e => e.date === date);
+function startTahrirlashEntry(id) {
+  const entry = entries.find(e => e.id === id);
   if (!entry) {
     showToast("Yozuv topilmadi");
     return;
   }
 
-  editingEntryDate = entry.date;
+  editingEntryId = entry.id;
   document.getElementById("entryDate").value = entry.date;
   SECTIONS.forEach(s => setSliderValue(s.key, entry[s.key]));
 
@@ -1007,9 +1082,9 @@ function renderInsights() {
   const deltaSign = delta > 0 ? "+" : "";
 
   kpiGrid.innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">So'nggi Umumiy</div><div class="kpi-value">${latest.umumiy}</div></div>
-    <div class="kpi-card"><div class="kpi-label">O'rtacha Umumiy</div><div class="kpi-value">${avgOverall.toFixed(1)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Tendensiya</div><div class="kpi-value">${deltaSign}${delta}</div></div>
+    <div class="kpi-card"><div class="kpi-label">So'nggi Umumiy</div><div class="kpi-value">${latest.umumiy.toFixed(0)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">O'rtacha Umumiy</div><div class="kpi-value">${avgOverall.toFixed(0)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Tendensiya</div><div class="kpi-value">${deltaSign}${delta.toFixed(0)}</div></div>
   `;
 
   const weakest = SECTIONS
@@ -1018,40 +1093,14 @@ function renderInsights() {
 
   cmp.innerHTML = `
     <div class="tip-text">
-      So'nggi test <strong>${latest.umumiy}/40</strong>.
-      Hozir zaif soha: <strong style="color:${weakest.color}">${weakest.label} (${weakest.score}/40)</strong>.
-      Maqsadga farq: <strong>${weakest.gap}</strong>.
+      So'nggi test <strong>${latest.umumiy.toFixed(0)}</strong>.
+      Hozir zaif soha: <strong style="color:${weakest.color}">${weakest.label} (${weakest.score.toFixed(0)})</strong>.
+      Maqsadga farq: <strong>${weakest.gap.toFixed(0)}</strong>.
     </div>
   `;
 }
 
-// ── TUNGI REJIM TUGMASI ──────────────────────────────────────────────
-function toggleNightMode() {
-  const current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
-  const next = current === "dark" ? "light" : "dark";
-  settings.theme = next;
-  saveSettings();
-  if (typeof window.__applyThemeFromSettings === "function") {
-    window.__applyThemeFromSettings();
-  }
-  syncThemeToggleBtn();
-}
-
-function saveSettings() {
-  try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-  } catch {}
-}
-
-function syncThemeToggleBtn() {
-  const btn = document.getElementById("themeToggleBtn");
-  if (!btn) return;
-  const isLight = document.documentElement.getAttribute("data-theme") === "light";
-  btn.textContent = isLight ? "☀️" : "🌙";
-  btn.setAttribute("aria-label", isLight ? "Kunduzgi rejim yoqilgan - tungi rejimga o'tish" : "Tungi rejim yoqilgan - kunduzgi rejimga o'tish");
-}
-
-// ── TOAST ────────────────────────────────────────────────────────────
+// в”Ђв”Ђ TOAST в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 function showToast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
