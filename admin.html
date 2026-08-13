@@ -49,7 +49,32 @@
       border: 1px solid var(--border);
       border-radius: 20px;
       padding: 32px 28px;
+      position: relative;
     }
+    .login-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      text-decoration: none;
+      font-family: 'Poppins', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 7px 14px 7px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      margin-bottom: 20px;
+      transition: color .2s, border-color .2s, background .2s, transform .15s;
+    }
+    .login-back svg { width: 14px; height: 14px; transition: transform .15s; }
+    .login-back:hover {
+      color: var(--text);
+      border-color: rgba(245,200,66,.4);
+      background: rgba(245,200,66,.08);
+      transform: translateX(-2px);
+    }
+    .login-back:hover svg { transform: translateX(-2px); }
     .login-badge {
       display: inline-block;
       padding: 4px 10px;
@@ -465,11 +490,21 @@
 <!-- LOGIN -->
 <div class="login-overlay" id="loginOverlay">
   <div class="login-card">
+    <a href="main.html" class="login-back" aria-label="Orqaga">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Orqaga
+    </a>
     <div class="login-badge">🔒 Admin Kirish</div>
     <h1 class="login-title">IELTS Tracker <em>Admin</em></h1>
     <p class="login-sub">Talabalar faoliyatini ko'rish uchun admin parolini kiriting.</p>
     <label class="login-label" for="adminPass">Parol</label>
-    <input class="login-input" type="password" id="adminPass" placeholder="Parolni kiriting..." onkeydown="if(event.key==='Enter')doLogin()"/>
+    <div style="position:relative">
+      <input class="login-input" type="password" id="adminPass" placeholder="Parolni kiriting..." onkeydown="if(event.key==='Enter')doLogin()" style="padding-right:44px"/>
+      <button type="button" onclick="toggleAdminPassVisibility()" aria-label="Parolni ko'rsatish"
+        style="position:absolute;right:6px;top:0;height:44px;display:flex;align-items:center;background:none;border:none;cursor:pointer;font-size:16px;padding:0 8px;line-height:1;color:var(--muted)">
+        <span id="adminPassEye">👁</span>
+      </button>
+    </div>
     <button class="login-btn" onclick="doLogin()">Kirish</button>
     <div class="login-error" id="loginError"></div>
   </div>
@@ -732,6 +767,15 @@ const DEFAULT_ABOUT_CONTENT = {
 };
 
 // ── LOGIN ──────────────────────────────────────────
+window.toggleAdminPassVisibility = function() {
+  const input = document.getElementById('adminPass');
+  const eye = document.getElementById('adminPassEye');
+  if (!input || !eye) return;
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  eye.textContent = showing ? '👁' : '🙈';
+};
+
 window.doLogin = function() {
   const val = document.getElementById('adminPass').value;
   if (val === ADMIN_PASSWORD) {
