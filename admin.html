@@ -723,7 +723,7 @@
             </div>
             <div class="form-row">
               <label for="ai_model">Model nomi</label>
-              <input class="form-input" type="text" id="ai_model" placeholder="gemini-2.0-flash"/>
+              <input class="form-input" type="text" id="ai_model" placeholder="gemini-3.6-flash"/>
             </div>
             <div class="form-row">
               <label for="ai_baseUrl">Base URL (ixtiyoriy)</label>
@@ -1082,7 +1082,7 @@ window.switchAdminTab = function(name, btn) {
 };
 
 // ── AI (WRITING) SOZLAMALARI ────────────────────────
-const AI_DEFAULT_MODEL = 'gemini-2.0-flash';
+const AI_DEFAULT_MODEL = 'gemini-3.6-flash';
 const AI_DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 function loadAISettings() {
   const key = localStorage.getItem('writing_api_key') || '';
