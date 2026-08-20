@@ -534,6 +534,7 @@
     <div class="admin-nav">
       <button class="tab-btn active" id="tabBtnStudents" type="button" onclick="switchAdminTab('students', this)">Talabalar</button>
       <button class="tab-btn" id="tabBtnAbout" type="button" onclick="switchAdminTab('about', this)">Dastur haqida</button>
+      <button class="tab-btn" id="tabBtnAI" type="button" onclick="switchAdminTab('ai', this)">AI Sozlamalari</button>
     </div>
 
     <!-- TALABALAR BO'LIMI -->
@@ -703,6 +704,43 @@
       <div style="background:rgba(245,200,66,.06);border:1px solid rgba(245,200,66,.18);border-radius:14px;padding:14px 16px;font-size:13px;color:var(--muted);line-height:1.6;margin-top:16px">
         <strong style="color:var(--gold)">ℹ️ Eslatma:</strong> Bu matnlar ushbu brauzerning localStorage xotirasida saqlanadi.
         O'zgarishlar shu qurilma/brauzerda "Dastur haqida" sahifasini ochgan har bir kishiga ko'rinadi.
+      </div>
+
+    </div>
+
+    <!-- AI SOZLAMALARI BO'LIMI -->
+    <div id="aiSection" style="display:none">
+
+      <div class="section-title">Writing Baholash — AI Sozlamalari</div>
+      <div class="session-card" style="padding:20px">
+
+        <div class="form-section">
+          <div class="form-section-title">Gemini API</div>
+          <div class="form-grid-2">
+            <div class="form-row" style="grid-column:1 / -1">
+              <label for="ai_apiKey">API Kalit</label>
+              <input class="form-input" type="text" id="ai_apiKey" placeholder="AIzaSy..." autocomplete="off"/>
+            </div>
+            <div class="form-row">
+              <label for="ai_model">Model nomi</label>
+              <input class="form-input" type="text" id="ai_model" placeholder="gemini-2.0-flash"/>
+            </div>
+            <div class="form-row">
+              <label for="ai_baseUrl">Base URL (ixtiyoriy)</label>
+              <input class="form-input" type="text" id="ai_baseUrl" placeholder="https://generativelanguage.googleapis.com/v1beta"/>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+          <button class="login-btn" style="width:auto;padding:10px 22px" onclick="saveAISettings()">Saqlash</button>
+          <button class="btn-pill" type="button" onclick="resetAISettings()">Standart holatga qaytarish</button>
+        </div>
+      </div>
+
+      <div style="background:rgba(245,200,66,.06);border:1px solid rgba(245,200,66,.18);border-radius:14px;padding:14px 16px;font-size:13px;color:var(--muted);line-height:1.6;margin-top:16px">
+        <strong style="color:var(--gold)">ℹ️ Eslatma:</strong> API kalit shu brauzerning localStorage xotirasida saqlanadi va Writing bo'limidagi baholash so'rovlarida ishlatiladi.
+        Kalitni <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--teal)">Google AI Studio</a>dan olishingiz mumkin.
       </div>
 
     </div>
@@ -1038,7 +1076,46 @@ window.switchAdminTab = function(name, btn) {
   btn.classList.add('active');
   document.getElementById('studentsSection').style.display = name === 'students' ? '' : 'none';
   document.getElementById('aboutSection').style.display = name === 'about' ? '' : 'none';
+  document.getElementById('aiSection').style.display = name === 'ai' ? '' : 'none';
   if (name === 'about') loadAboutEditor();
+  if (name === 'ai') loadAISettings();
+};
+
+// ── AI (WRITING) SOZLAMALARI ────────────────────────
+const AI_DEFAULT_MODEL = 'gemini-2.0-flash';
+const AI_DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+function loadAISettings() {
+  const key = localStorage.getItem('writing_api_key') || '';
+  const model = localStorage.getItem('writing_selected_model') || AI_DEFAULT_MODEL;
+  const baseUrl = localStorage.getItem('writing_api_base_url') || AI_DEFAULT_BASE_URL;
+  const elKey = document.getElementById('ai_apiKey');
+  const elModel = document.getElementById('ai_model');
+  const elBase = document.getElementById('ai_baseUrl');
+  if (elKey) elKey.value = key;
+  if (elModel) elModel.value = model;
+  if (elBase) elBase.value = baseUrl;
+}
+window.saveAISettings = function() {
+  const key = (document.getElementById('ai_apiKey').value || '').trim();
+  const model = (document.getElementById('ai_model').value || '').trim() || AI_DEFAULT_MODEL;
+  const baseUrl = (document.getElementById('ai_baseUrl').value || '').trim() || AI_DEFAULT_BASE_URL;
+  try {
+    if (key) localStorage.setItem('writing_api_key', key);
+    else localStorage.removeItem('writing_api_key');
+    localStorage.setItem('writing_selected_model', model);
+    localStorage.setItem('writing_api_base_url', baseUrl);
+    showToast('AI sozlamalari saqlandi ✓');
+  } catch { showToast('Saqlashda xatolik yuz berdi'); }
+};
+window.resetAISettings = function() {
+  if (!confirm('AI sozlamalarini standart holatga qaytarishni xohlaysizmi? (API kalit ham o\'chiriladi)')) return;
+  try {
+    localStorage.removeItem('writing_api_key');
+    localStorage.removeItem('writing_selected_model');
+    localStorage.removeItem('writing_api_base_url');
+  } catch {}
+  loadAISettings();
+  showToast('Standart holatga qaytarildi ✓');
 };
 
 // ── ABOUT EDITOR ───────────────────────────────────
