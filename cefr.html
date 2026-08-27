@@ -184,12 +184,34 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
-// Talaba kuzatuvi - admin panel uchun
+// Talaba kuzatuvi - admin panel uchun (Firebase orqali, IELTS trackerdagi bilan bir xil bazaga)
 (function() {
-  const VISITOR_LOG_KEY = 'nylc_visitor_log';
   const VISITOR_ID_KEY = 'nylc_visitor_id';
   const ENTRIES_KEY = 'nylc_cefr_entries';
+  const NAME_KEY = 'nylc_student_name';
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB4X_pZPIqORmmXKhcW2f8lPOe2RIIH2bM",
+    authDomain: "tracker-8ae79.firebaseapp.com",
+    projectId: "tracker-8ae79",
+    storageBucket: "tracker-8ae79.firebasestorage.app",
+    messagingSenderId: "256977321551",
+    appId: "1:256977321551:web:134cfae0f32bedb84ef43a"
+  };
+
+  let db;
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    else firebase.app();
+    db = firebase.firestore();
+  } catch (e) {
+    console.warn('Firebase init error (cefr) — offline/blocked, continuing without it:', e);
+    const chain = { get: async () => ({ exists: false, data: () => ({}) }), set: async () => {} };
+    db = { collection: () => ({ doc: () => chain }) };
+  }
 
   function getOrCreateVisitorId() {
     let id = localStorage.getItem(VISITOR_ID_KEY);
@@ -200,40 +222,74 @@ if ('serviceWorker' in navigator) {
     return id;
   }
 
-  function logVisit() {
-    const id = getOrCreateVisitorId();
-    const now = Date.now();
-    let log = [];
-    try { log = JSON.parse(localStorage.getItem(VISITOR_LOG_KEY) || '[]'); } catch {}
+  const visitorId = getOrCreateVisitorId();
+  const ua = navigator.userAgent;
+  const device = /mobile/i.test(ua) ? 'Mobil' : /tablet/i.test(ua) ? 'Planshet' : 'Kompyuter';
 
-    const ua = navigator.userAgent;
-    const device = /mobile/i.test(ua) ? 'Mobil' : /tablet/i.test(ua) ? 'Planshet' : 'Kompyuter';
-
-    // Get entries
-    let entries = [];
+  function getLocalCefrEntries() {
     try {
       const raw = localStorage.getItem(ENTRIES_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        entries = Array.isArray(parsed) ? parsed : (parsed?.entries || []);
-      }
-    } catch {}
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : (parsed?.entries || []);
+    } catch { return []; }
+  }
 
-    const existing = log.find(e => e.id === id);
-    if (existing) {
-      existing.lastSeen = now;
-      existing.visits = (existing.visits || 1) + 1;
-      existing.device = device;
-      existing.entries = entries;
-    } else {
-      log.push({ id, firstSeen: now, lastSeen: now, visits: 1, device, entries });
-    }
-    if (log.length > 200) log = log.slice(-200);
-    try { localStorage.setItem(VISITOR_LOG_KEY, JSON.stringify(log)); } catch {}
+  // CEFR natijalarini Firestore'ga saqlash — IELTS bilan bir xil 'visitors' hujjatida,
+  // lekin alohida maydonda ('cefrEntries'), shuning uchun IELTS natijalarini bosib qolmaydi.
+  window._fbSaveCefrEntries = async function(entriesList) {
+    try {
+      const sorted = [...entriesList].sort((a, b) => a.date.localeCompare(b.date));
+      const latest = sorted[sorted.length - 1];
+      const name = localStorage.getItem(NAME_KEY) || '';
+      await db.collection('visitors').doc(visitorId).set({
+        id: visitorId,
+        device,
+        name,
+        lastSeen: Date.now(),
+        cefrEntries: sorted,
+        latestCefr: latest ? latest.umumiy : null,
+        cefrUpdatedAt: new Date().toISOString(),
+      }, { merge: true });
+    } catch (e) { console.warn('Firebase CEFR sync error:', e); }
+  };
+
+  async function logVisit() {
+    try {
+      const visitorRef = db.collection('visitors').doc(visitorId);
+      const snap = await visitorRef.get();
+      const now = Date.now();
+      const entriesList = getLocalCefrEntries();
+      const latest = entriesList.length ? entriesList[entriesList.length - 1] : null;
+      const name = localStorage.getItem(NAME_KEY) || '';
+
+      if (snap.exists) {
+        await visitorRef.set({
+          lastSeen: now,
+          visits: (snap.data().visits || 0) + 1,
+          device,
+          name,
+          cefrEntries: entriesList,
+          latestCefr: latest ? latest.umumiy : null,
+        }, { merge: true });
+      } else {
+        await visitorRef.set({
+          id: visitorId,
+          firstSeen: now,
+          lastSeen: now,
+          visits: 1,
+          device,
+          name,
+          cefrEntries: entriesList,
+          latestCefr: latest ? latest.umumiy : null,
+          createdAt: new Date().toISOString(),
+        });
+      }
+    } catch (e) { console.warn('Firebase CEFR visit log error:', e); }
   }
 
   logVisit();
-  // Update log every 2 minutes while page is open
+  // Sahifa ochiq turganda har 2 daqiqada yangilab turish
   setInterval(logVisit, 120000);
 })();
 </script>
