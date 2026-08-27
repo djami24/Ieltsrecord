@@ -113,6 +113,8 @@ function saveEntries() {
     };
     localStorage.setItem(ENTRIES_KEY, JSON.stringify(payload));
   } catch {}
+  // Firebase ga ham saqlash (async, UI ni bloklamaydi) — admin panelda ko'rinishi uchun
+  if (window._fbSaveCefrEntries) window._fbSaveCefrEntries(entries);
 }
 
 let entries = loadEntries();
