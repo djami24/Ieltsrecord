@@ -589,6 +589,7 @@
                 <th>Jami Testlar</th>
                 <th>So'nggi Ball</th>
                 <th>Tendensiya</th>
+                <th>CEFR Ball</th>
                 <th>Holat</th>
               </tr>
             </thead>
@@ -882,6 +883,15 @@ function buildSession(v, now) {
     ? (latest?.umumiy ?? 0) - (first?.umumiy ?? 0)
     : 0;
 
+  const rawCefrEntries = v.cefrEntries || [];
+  const sortedCefrEntries = [...rawCefrEntries].sort((a, b) =>
+    (a.date || '').localeCompare(b.date || ''));
+  const latestCefr = sortedCefrEntries[sortedCefrEntries.length - 1];
+  const firstCefr = sortedCefrEntries[0];
+  const cefrTrend = sortedCefrEntries.length >= 2
+    ? (latestCefr?.umumiy ?? 0) - (firstCefr?.umumiy ?? 0)
+    : 0;
+
   const secAgo = (now - (v.lastSeen || 0)) / 1000;
   let status = 'old';
   if (secAgo < 300) status = 'active';
@@ -901,6 +911,9 @@ function buildSession(v, now) {
     entries: sortedEntries,
     latestOverall: latest?.umumiy ?? null,
     trend,
+    cefrEntries: sortedCefrEntries,
+    latestCefr: latestCefr?.umumiy ?? null,
+    cefrTrend,
     status,
     secAgo,
   };
@@ -951,7 +964,7 @@ window.applyFilter = applyFilter;
 function renderTable(sessions) {
   const tbody = document.getElementById('sessionBody');
   if (!sessions.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-table">📋 Hech qanday sessiya topilmadi</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-table">📋 Hech qanday sessiya topilmadi</td></tr>`;
     return;
   }
   tbody.innerHTML = sessions.map(s => `
@@ -970,6 +983,9 @@ function renderTable(sessions) {
         ? `<span class="score-pill ${scoreClass(s.latestOverall)}">${s.latestOverall.toFixed(1)}</span>`
         : '<span style="color:var(--muted2);font-size:12px">—</span>'}</td>
       <td><span class="trend ${trendClass(s.trend)}">${trendText(s.trend)}</span></td>
+      <td>${s.latestCefr !== null
+        ? `<span class="score-pill ${scoreClass(s.latestCefr)}">${s.latestCefr.toFixed(1)}</span>`
+        : '<span style="color:var(--muted2);font-size:12px">—</span>'}</td>
       <td>${statusBadge(s.status)}</td>
     </tr>
   `).join('');
@@ -1023,6 +1039,16 @@ window.openDetail = function(id) {
     <div class="detail-item"><div class="d-label">Tendensiya</div><div class="d-val"><span class="trend ${trendClass(s.trend)}">${trendText(s.trend)}</span></div></div>
     ${keys.map((k,i) => `<div class="detail-item"><div class="d-label">${secs[i]}</div><div class="d-val"><span class="score-pill ${scoreClass(latest[k] ?? 0)}">${(latest[k] ?? 0).toFixed(1)}</span></div></div>`).join('')}
     ` : '<div class="detail-item" style="grid-column:1/-1"><div class="d-label">Natija</div><div class="d-val" style="color:var(--muted)">Hali test kiritmagan</div></div>'}
+    ${s.cefrEntries.length ? (() => {
+      const latestCefrEntry = s.cefrEntries[s.cefrEntries.length - 1];
+      return `
+    <div class="detail-item"><div class="d-label">CEFR Jami Testlar</div><div class="d-val">${s.cefrEntries.length}</div></div>
+    <div class="detail-item"><div class="d-label">CEFR So'nggi Umumiy</div><div class="d-val" style="color:var(--gold)">${(latestCefrEntry.umumiy ?? 0).toFixed(1)}</div></div>
+    <div class="detail-item"><div class="d-label">CEFR Tendensiya</div><div class="d-val"><span class="trend ${trendClass(s.cefrTrend)}">${trendText(s.cefrTrend)}</span></div></div>
+    <div class="detail-item"><div class="d-label">Tinglash (CEFR)</div><div class="d-val"><span class="score-pill ${scoreClass(latestCefrEntry.listening ?? 0)}">${(latestCefrEntry.listening ?? 0).toFixed(1)}</span></div></div>
+    <div class="detail-item"><div class="d-label">O'qish (CEFR)</div><div class="d-val"><span class="score-pill ${scoreClass(latestCefrEntry.reading ?? 0)}">${(latestCefrEntry.reading ?? 0).toFixed(1)}</span></div></div>
+      `;
+    })() : '<div class="detail-item" style="grid-column:1/-1"><div class="d-label">CEFR Natija</div><div class="d-val" style="color:var(--muted)">Hali CEFR test kiritmagan</div></div>'}
   `;
 
   const hist = s.entries.slice().reverse().slice(0, 10);
@@ -1051,7 +1077,7 @@ window.closeDetailPanel = function() {
 
 // ── EXPORT ─────────────────────────────────────────
 window.exportSessions = function() {
-  const headers = ['Ism_Familiya','ID','Qurilma','Birinchi_Tashrif','Oxirgi_Faollik','Tashriflar','Jami_Testlar','Songi_Ball','Tendensiya'];
+  const headers = ['Ism_Familiya','ID','Qurilma','Birinchi_Tashrif','Oxirgi_Faollik','Tashriflar','Jami_Testlar','Songi_Ball','Tendensiya','CEFR_Jami_Testlar','CEFR_Songi_Ball','CEFR_Tendensiya'];
   const rows = allSessions.map(s => [
     s.name, s.shortId, s.device,
     new Date(s.firstSeen).toISOString(),
@@ -1059,6 +1085,9 @@ window.exportSessions = function() {
     s.visits, s.entries.length,
     s.latestOverall?.toFixed(1) ?? '',
     s.trend.toFixed(1),
+    s.cefrEntries.length,
+    s.latestCefr?.toFixed(1) ?? '',
+    s.cefrTrend.toFixed(1),
   ]);
   const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
